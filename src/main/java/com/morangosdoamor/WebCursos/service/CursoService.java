@@ -53,20 +53,11 @@ public class CursoService {
     }
 
     public void adicionarCurso(Aluno aluno, String cursoId) {
-        if (aluno == null || cursoId == null || cursoId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Aluno e ID do curso são obrigatórios");
-        }
-        
-        if (!cursosDisponiveis.containsKey(cursoId)) {
-            throw new IllegalArgumentException("Curso não encontrado: " + cursoId);
-        }
+        validateAdicionarCursoParams(aluno, cursoId);
+        validateCursoExists(cursoId);
         
         String alunoId = aluno.getId();
-        
-        // Verificar se o aluno já está matriculado no curso
-        if (matriculas.containsKey(alunoId) && matriculas.get(alunoId).contains(cursoId)) {
-            throw new IllegalStateException("Aluno já está matriculado neste curso");
-        }
+        validateAlunoNaoMatriculado(alunoId, cursoId);
         
         // Adicionar matrícula (sem verificar pré-requisitos para o novo sistema de liberação)
         matriculas.computeIfAbsent(alunoId, k -> new HashSet<>()).add(cursoId);
@@ -92,37 +83,15 @@ public class CursoService {
     }
 
     public void finalizarCurso(Aluno aluno, Curso curso, float nota) {
-        if (aluno == null || curso == null) {
-            throw new IllegalArgumentException("Aluno e curso são obrigatórios");
-        }
-        
-        if (nota < 0 || nota > 10) {
-            throw new IllegalArgumentException("Nota deve estar entre 0 e 10");
-        }
+        validateFinalizarCursoParams(aluno, curso, nota);
         
         String alunoId = aluno.getId();
         String cursoId = curso.getId();
         
-        // Verificar se o aluno está matriculado no curso
-        if (!matriculas.containsKey(alunoId) || !matriculas.get(alunoId).contains(cursoId)) {
-            throw new IllegalStateException("Aluno não está matriculado neste curso");
-        }
+        validateAlunoMatriculado(alunoId, cursoId);
+        validateCursoNaoFinalizado(alunoId, cursoId);
         
-        // Verificar se o curso já foi finalizado
-        if (cursosFinalizados.containsKey(alunoId) && cursosFinalizados.get(alunoId).contains(cursoId)) {
-            throw new IllegalStateException("Curso já foi finalizado");
-        }
-        
-        // Registrar nota
-        notasFinais.computeIfAbsent(alunoId, k -> new HashMap<>()).put(cursoId, nota);
-        
-        // Se aprovado (nota >= 7), marcar como finalizado
-        if (nota >= 7.0f) {
-            cursosFinalizados.computeIfAbsent(alunoId, k -> new HashSet<>()).add(cursoId);
-        }
-        
-        // Remover da lista de matrículas ativas
-        matriculas.get(alunoId).remove(cursoId);
+        processarFinalizacao(alunoId, cursoId, nota);
     }
 
     public ArrayList<Curso> findLiberadosByAluno(Aluno aluno) {
@@ -134,40 +103,15 @@ public class CursoService {
         Set<String> cursosFinalizadosAluno = cursosFinalizados.getOrDefault(alunoId, new HashSet<>());
         Set<String> cursosMatriculados = matriculas.getOrDefault(alunoId, new HashSet<>());
         
-        // Calcular quantos cursos devem ser liberados (3 por curso finalizado com nota >= 7.0)
-        int cursosParaLiberar = cursosFinalizadosAluno.size() * 3;
+        int cursosParaLiberar = calculateCursosParaLiberar(cursosFinalizadosAluno.size());
         
-        ArrayList<Curso> cursosLiberados = new ArrayList<>();
-        
-        // Se não há cursos finalizados, não liberar nenhum curso
-        if (cursosParaLiberar == 0) {
-            return cursosLiberados;
-        }
-        
-        // Buscar cursos disponíveis para liberação
-        for (Curso curso : cursosDisponiveis.values()) {
-            String cursoId = curso.getId();
-            
-            // Pular se já está matriculado ou já finalizou
-            if (cursosMatriculados.contains(cursoId) || cursosFinalizadosAluno.contains(cursoId)) {
-                continue;
-            }
-            
-            // Adicionar curso à lista de liberados (sem verificar pré-requisitos)
-            cursosLiberados.add(curso);
-            
-            // Parar quando atingir o número de cursos a liberar
-            if (cursosLiberados.size() >= cursosParaLiberar) {
-                break;
-            }
-        }
-        
-        return cursosLiberados;
+        return cursosParaLiberar == 0 ? new ArrayList<>() : 
+               buscarCursosDisponiveis(cursosMatriculados, cursosFinalizadosAluno, cursosParaLiberar);
     }
     
     // Métodos auxiliares para consultas
     public Float getNota(Aluno aluno, Curso curso) {
-        if (aluno == null || curso == null) {
+        if (!isValidAlunoAndCurso(aluno, curso)) {
             return null;
         }
         
@@ -180,16 +124,112 @@ public class CursoService {
     }
     
     public boolean isCursoFinalizado(Aluno aluno, Curso curso) {
-        if (aluno == null || curso == null) {
+        if (!isValidAlunoAndCurso(aluno, curso)) {
             return false;
         }
         
-        Set<String> finalizados = cursosFinalizados.get(aluno.getId());
-        return finalizados != null && finalizados.contains(curso.getId());
+        return isCursoFinalizadoById(aluno.getId(), curso.getId());
     }
     
     public List<Curso> getAllCursos() {
         return new ArrayList<>(cursosDisponiveis.values());
+    }
+    
+    // Métodos privados para reduzir complexidade ciclomática
+    
+    private void validateAdicionarCursoParams(Aluno aluno, String cursoId) {
+        if (aluno == null || cursoId == null || cursoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Aluno e ID do curso são obrigatórios");
+        }
+    }
+    
+    private void validateCursoExists(String cursoId) {
+        if (!cursosDisponiveis.containsKey(cursoId)) {
+            throw new IllegalArgumentException("Curso não encontrado: " + cursoId);
+        }
+    }
+    
+    private void validateAlunoNaoMatriculado(String alunoId, String cursoId) {
+        if (isAlunoMatriculadoById(alunoId, cursoId)) {
+            throw new IllegalStateException("Aluno já está matriculado neste curso");
+        }
+    }
+    
+    private void validateFinalizarCursoParams(Aluno aluno, Curso curso, float nota) {
+        if (aluno == null || curso == null) {
+            throw new IllegalArgumentException("Aluno e curso são obrigatórios");
+        }
+        if (nota < 0 || nota > 10) {
+            throw new IllegalArgumentException("Nota deve estar entre 0 e 10");
+        }
+    }
+    
+    private void validateAlunoMatriculado(String alunoId, String cursoId) {
+        if (!isAlunoMatriculadoById(alunoId, cursoId)) {
+            throw new IllegalStateException("Aluno não está matriculado neste curso");
+        }
+    }
+    
+    private void validateCursoNaoFinalizado(String alunoId, String cursoId) {
+        if (isCursoFinalizadoById(alunoId, cursoId)) {
+            throw new IllegalStateException("Curso já foi finalizado");
+        }
+    }
+    
+    private void processarFinalizacao(String alunoId, String cursoId, float nota) {
+        // Registrar nota
+        notasFinais.computeIfAbsent(alunoId, k -> new HashMap<>()).put(cursoId, nota);
+        
+        // Se aprovado (nota >= 7), marcar como finalizado
+        if (isNotaAprovacao(nota)) {
+            cursosFinalizados.computeIfAbsent(alunoId, k -> new HashSet<>()).add(cursoId);
+        }
+        
+        // Remover da lista de matrículas ativas
+        matriculas.get(alunoId).remove(cursoId);
+    }
+    
+    private boolean isNotaAprovacao(float nota) {
+        return nota >= 7.0f;
+    }
+    
+    private int calculateCursosParaLiberar(int cursosFinalizados) {
+        return cursosFinalizados * 3;
+    }
+    
+    private ArrayList<Curso> buscarCursosDisponiveis(Set<String> cursosMatriculados, 
+                                                     Set<String> cursosFinalizados, 
+                                                     int cursosParaLiberar) {
+        ArrayList<Curso> cursosLiberados = new ArrayList<>();
+        
+        for (Curso curso : cursosDisponiveis.values()) {
+            if (podeLiberar(curso.getId(), cursosMatriculados, cursosFinalizados)) {
+                cursosLiberados.add(curso);
+                
+                if (cursosLiberados.size() >= cursosParaLiberar) {
+                    break;
+                }
+            }
+        }
+        
+        return cursosLiberados;
+    }
+    
+    private boolean podeLiberar(String cursoId, Set<String> cursosMatriculados, Set<String> cursosFinalizados) {
+        return !cursosMatriculados.contains(cursoId) && !cursosFinalizados.contains(cursoId);
+    }
+    
+    private boolean isValidAlunoAndCurso(Aluno aluno, Curso curso) {
+        return aluno != null && curso != null;
+    }
+    
+    private boolean isCursoFinalizadoById(String alunoId, String cursoId) {
+        Set<String> finalizados = cursosFinalizados.get(alunoId);
+        return finalizados != null && finalizados.contains(cursoId);
+    }
+    
+    private boolean isAlunoMatriculadoById(String alunoId, String cursoId) {
+        return matriculas.containsKey(alunoId) && matriculas.get(alunoId).contains(cursoId);
     }
 
 }
