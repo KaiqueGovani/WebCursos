@@ -22,7 +22,7 @@ class WebCursosApplicationTests {
 		// Arrange
 		Aluno aluno = new Aluno();
 		CursoService cursoService = new CursoService();
-		cursoService.adicionarCurso(aluno, "Curso 1");
+		cursoService.adicionarCurso(aluno, "JAVA001");
 		ArrayList<Curso> cursos = cursoService.getCursos(aluno);
 		float nota = 10;
 
@@ -39,8 +39,8 @@ class WebCursosApplicationTests {
 		// Arrange
 		Aluno aluno = new Aluno();
 		CursoService cursoService = new CursoService();
-		cursoService.adicionarCurso(aluno, "Curso 1");
-		cursoService.adicionarCurso(aluno, "Curso 2");
+		cursoService.adicionarCurso(aluno, "JAVA001");
+		cursoService.adicionarCurso(aluno, "WEB001");
 		ArrayList<Curso> cursos = cursoService.getCursos(aluno);
 		float nota1 = 10;
 		float nota2 = 7;
@@ -59,7 +59,7 @@ class WebCursosApplicationTests {
 		// Arrange
 		Aluno aluno = new Aluno();
 		CursoService cursoService = new CursoService();
-		cursoService.adicionarCurso(aluno, "Curso 1");
+		cursoService.adicionarCurso(aluno, "JAVA001");
 		ArrayList<Curso> cursos = cursoService.getCursos(aluno);
 		float nota = 6.9f;
 
