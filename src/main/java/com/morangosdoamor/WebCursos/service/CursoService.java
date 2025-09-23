@@ -1,6 +1,9 @@
-package com.morangosdoamor.WebCursos.domain;
+package com.morangosdoamor.WebCursos.service;
 
 import java.util.ArrayList;
+
+import com.morangosdoamor.WebCursos.domain.Aluno;
+import com.morangosdoamor.WebCursos.domain.Curso;
 
 public class CursoService {
 

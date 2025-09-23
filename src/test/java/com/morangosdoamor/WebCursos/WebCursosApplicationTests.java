@@ -9,7 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.morangosdoamor.WebCursos.domain.Aluno;
 import com.morangosdoamor.WebCursos.domain.Curso;
-import com.morangosdoamor.WebCursos.domain.CursoService;
+import com.morangosdoamor.WebCursos.service.CursoService;
 
 @SpringBootTest
 class WebCursosApplicationTests {
