@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+# Always Update README When Making Changes
+
+**MANDATORY**: Whenever you make changes to the project, you MUST evaluate if those changes require updates to the [README.md](mdc:README.md) file and update it accordingly.
+
+## Changes That Require README Updates
+
+Update the README when changes affect:
+
+- **New features or functionality** - Add to features section
+- **API endpoints or interfaces** - Update API documentation
+- **Dependencies or requirements** - Update installation/setup instructions
+- **Configuration changes** - Update configuration section
+- **Architecture modifications** - Update architecture diagrams or descriptions
+- **Setup or deployment process** - Update setup instructions
+- **Usage examples** - Add or modify code examples
+- **Environment variables** - Update configuration documentation
+- **Database schema changes** - Update data model documentation
+- **Breaking changes** - Update migration guides or breaking changes section
+
+## Process
+1. **Make your changes** to the codebase
+2. **Evaluate impact** on project documentation
+3. **Update README.md** if any of the above categories are affected
+4. **Ensure consistency** between code and documentation
+
+## What NOT to Update
+- Minor bug fixes that don't change functionality
+- Internal refactoring without external impact
+- Code formatting or style changes
+- Test additions that don't change public API
+
+This ensures the README always reflects the current state of the project and remains a reliable source of truth for users and developers.

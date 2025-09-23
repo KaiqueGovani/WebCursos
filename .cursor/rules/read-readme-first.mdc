@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+# Always Read README First
+
+**MANDATORY**: Before starting any work or making changes to this project, you MUST read the [README.md](mdc:README.md) file to understand:
+
+- Project overview and purpose
+- Architecture and structure
+- Setup and configuration requirements
+- Development guidelines
+- Key dependencies and technologies used
+- Important conventions and patterns
+
+This ensures you have proper context about the project before making any modifications or suggestions.
+
+## Process
+1. **First action**: Read README.md completely
+2. **Understand**: Project goals, structure, and conventions
+3. **Then proceed**: With the requested task using the gained context
+
+This rule applies to ALL requests and conversations about this codebase.
