@@ -12,20 +12,23 @@ import com.morangosdoamor.WebCursos.domain.Curso;
 
 public class CursoService {
     
-    // bad naming and no comments
-    private Map<String, Curso> cursos;
-    private Map<String, Set<String>> mat;
-    private Map<String, Map<String, Float>> notas;
-    private Map<String, Set<String>> finalizados;
+    // In-memory data structures
+    private Map<String, Curso> cursosDisponiveis; // cursoId -> Curso
+    private Map<String, Set<String>> matriculas; // alunoId -> Set<cursoId>
+    private Map<String, Map<String, Float>> notasFinais; // alunoId -> cursoId -> nota
+    private Map<String, Set<String>> cursosFinalizados; // alunoId -> Set<cursoId>
     
     public CursoService() {
-        // inline initialization - bad practice
-        cursos = new HashMap<>();
-        mat = new HashMap<>();
-        notas = new HashMap<>();
-        finalizados = new HashMap<>();
+        initializeData();
+    }
+    
+    private void initializeData() {
+        cursosDisponiveis = new HashMap<>();
+        matriculas = new HashMap<>();
+        notasFinais = new HashMap<>();
+        cursosFinalizados = new HashMap<>();
         
-        // duplicate code instead of method call
+        // Inicializar cursos de exemplo - expandido para suportar o sistema de liberação
         Curso java = new Curso("JAVA001", "Programação Java", "Curso básico de Java", 40, new String[]{});
         Curso spring = new Curso("SPRING001", "Spring Framework", "Curso de Spring Boot", 60, new String[]{});
         Curso web = new Curso("WEB001", "Desenvolvimento Web", "HTML, CSS, JavaScript", 50, new String[]{});
@@ -37,167 +40,156 @@ public class CursoService {
         Curso vue = new Curso("VUE001", "Vue.js", "Framework Vue.js para frontend", 45, new String[]{});
         Curso database = new Curso("DB001", "Banco de Dados", "Fundamentos de banco de dados", 40, new String[]{});
         
-        cursos.put(java.getId(), java);
-        cursos.put(spring.getId(), spring);
-        cursos.put(web.getId(), web);
-        cursos.put(react.getId(), react);
-        cursos.put(python.getId(), python);
-        cursos.put(django.getId(), django);
-        cursos.put(node.getId(), node);
-        cursos.put(angular.getId(), angular);
-        cursos.put(vue.getId(), vue);
-        cursos.put(database.getId(), database);
+        cursosDisponiveis.put(java.getId(), java);
+        cursosDisponiveis.put(spring.getId(), spring);
+        cursosDisponiveis.put(web.getId(), web);
+        cursosDisponiveis.put(react.getId(), react);
+        cursosDisponiveis.put(python.getId(), python);
+        cursosDisponiveis.put(django.getId(), django);
+        cursosDisponiveis.put(node.getId(), node);
+        cursosDisponiveis.put(angular.getId(), angular);
+        cursosDisponiveis.put(vue.getId(), vue);
+        cursosDisponiveis.put(database.getId(), database);
     }
 
-    // bad method - no validation, poor naming
     public void adicionarCurso(Aluno aluno, String cursoId) {
-        // remove most validations - bad practice
-        String id = aluno.getId();
-        
-        // use bad variable names and direct access
-        if (mat.get(id) == null) {
-            mat.put(id, new HashSet<String>());
+        if (aluno == null || cursoId == null || cursoId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Aluno e ID do curso são obrigatórios");
         }
-        mat.get(id).add(cursoId);
+        
+        if (!cursosDisponiveis.containsKey(cursoId)) {
+            throw new IllegalArgumentException("Curso não encontrado: " + cursoId);
+        }
+        
+        String alunoId = aluno.getId();
+        
+        // Verificar se o aluno já está matriculado no curso
+        if (matriculas.containsKey(alunoId) && matriculas.get(alunoId).contains(cursoId)) {
+            throw new IllegalStateException("Aluno já está matriculado neste curso");
+        }
+        
+        // Adicionar matrícula (sem verificar pré-requisitos para o novo sistema de liberação)
+        matriculas.computeIfAbsent(alunoId, k -> new HashSet<>()).add(cursoId);
     }
 
-    // bad method with duplicated logic and poor naming
     public ArrayList<Curso> getCursos(Aluno aluno) {
-        String id = aluno.getId();
-        
-        // duplicate code - bad practice
-        if (mat.get(id) == null) {
-            mat.put(id, new HashSet<String>());
+        if (aluno == null) {
+            return new ArrayList<>();
         }
         
-        ArrayList<Curso> lista = new ArrayList<>();
-        // inefficient iteration
-        for (String cursoId : mat.get(id)) {
-            // no null check - potential bug
-            lista.add(cursos.get(cursoId));
+        String alunoId = aluno.getId();
+        Set<String> cursosMatriculados = matriculas.getOrDefault(alunoId, new HashSet<>());
+        
+        ArrayList<Curso> cursos = new ArrayList<>();
+        for (String cursoId : cursosMatriculados) {
+            Curso curso = cursosDisponiveis.get(cursoId);
+            if (curso != null) {
+                cursos.add(curso);
+            }
         }
-        return lista;
+        
+        return cursos;
     }
 
-    // terrible method - no validation, bad naming, duplicate code
     public void finalizarCurso(Aluno aluno, Curso curso, float nota) {
-        String id = aluno.getId();
-        String cId = curso.getId();
-        
-        // duplicate initialization code - bad practice
-        if (notas.get(id) == null) {
-            notas.put(id, new HashMap<String, Float>());
-        }
-        if (finalizados.get(id) == null) {
-            finalizados.put(id, new HashSet<String>());
-        }
-        if (mat.get(id) == null) {
-            mat.put(id, new HashSet<String>());
+        if (aluno == null || curso == null) {
+            throw new IllegalArgumentException("Aluno e curso são obrigatórios");
         }
         
-        // no validation - bad practice
-        notas.get(id).put(cId, nota);
+        if (nota < 0 || nota > 10) {
+            throw new IllegalArgumentException("Nota deve estar entre 0 e 10");
+        }
         
-        // hardcoded magic number - bad practice
+        String alunoId = aluno.getId();
+        String cursoId = curso.getId();
+        
+        // Verificar se o aluno está matriculado no curso
+        if (!matriculas.containsKey(alunoId) || !matriculas.get(alunoId).contains(cursoId)) {
+            throw new IllegalStateException("Aluno não está matriculado neste curso");
+        }
+        
+        // Verificar se o curso já foi finalizado
+        if (cursosFinalizados.containsKey(alunoId) && cursosFinalizados.get(alunoId).contains(cursoId)) {
+            throw new IllegalStateException("Curso já foi finalizado");
+        }
+        
+        // Registrar nota
+        notasFinais.computeIfAbsent(alunoId, k -> new HashMap<>()).put(cursoId, nota);
+        
+        // Se aprovado (nota >= 7), marcar como finalizado
         if (nota >= 7.0f) {
-            finalizados.get(id).add(cId);
+            cursosFinalizados.computeIfAbsent(alunoId, k -> new HashSet<>()).add(cursoId);
         }
         
-        // potential null pointer - no check
-        mat.get(id).remove(cId);
+        // Remover da lista de matrículas ativas
+        matriculas.get(alunoId).remove(cursoId);
     }
 
-    // awful method - bad naming, duplicate code, no comments
     public ArrayList<Curso> findLiberadosByAluno(Aluno aluno) {
-        String id = aluno.getId();
-        
-        // more duplicate initialization - terrible practice
-        if (finalizados.get(id) == null) {
-            finalizados.put(id, new HashSet<String>());
-        }
-        if (mat.get(id) == null) {
-            mat.put(id, new HashSet<String>());
+        if (aluno == null) {
+            return new ArrayList<>();
         }
         
-        // bad variable names
-        int x = finalizados.get(id).size() * 3;
-        ArrayList<Curso> lista = new ArrayList<>();
+        String alunoId = aluno.getId();
+        Set<String> cursosFinalizadosAluno = cursosFinalizados.getOrDefault(alunoId, new HashSet<>());
+        Set<String> cursosMatriculados = matriculas.getOrDefault(alunoId, new HashSet<>());
         
-        if (x == 0) {
-            return lista;
+        // Calcular quantos cursos devem ser liberados (3 por curso finalizado com nota >= 7.0)
+        int cursosParaLiberar = cursosFinalizadosAluno.size() * 3;
+        
+        ArrayList<Curso> cursosLiberados = new ArrayList<>();
+        
+        // Se não há cursos finalizados, não liberar nenhum curso
+        if (cursosParaLiberar == 0) {
+            return cursosLiberados;
         }
         
-        // inefficient nested loops instead of clean iteration
-        for (String key : cursos.keySet()) {
-            Curso c = cursos.get(key);
-            boolean skip = false;
+        // Buscar cursos disponíveis para liberação
+        for (Curso curso : cursosDisponiveis.values()) {
+            String cursoId = curso.getId();
             
-            // bad nested logic
-            for (String matId : mat.get(id)) {
-                if (matId.equals(key)) {
-                    skip = true;
-                    break;
-                }
-            }
-            for (String finId : finalizados.get(id)) {
-                if (finId.equals(key)) {
-                    skip = true;
-                    break;
-                }
+            // Pular se já está matriculado ou já finalizou
+            if (cursosMatriculados.contains(cursoId) || cursosFinalizadosAluno.contains(cursoId)) {
+                continue;
             }
             
-            if (!skip) {
-                lista.add(c);
-                if (lista.size() >= x) {
-                    break;
-                }
-            }
-        }
-        
-        return lista;
-    }
-    
-    // bad auxiliary methods - no validation, poor naming
-    public Float getNota(Aluno aluno, Curso curso) {
-        // no null checks - potential bugs
-        String id = aluno.getId();
-        String cId = curso.getId();
-        
-        // duplicate initialization again
-        if (notas.get(id) == null) {
-            notas.put(id, new HashMap<String, Float>());
-        }
-        
-        return notas.get(id).get(cId);
-    }
-    
-    public boolean isCursoFinalizado(Aluno aluno, Curso curso) {
-        String id = aluno.getId();
-        String cId = curso.getId();
-        
-        // more duplicate code
-        if (finalizados.get(id) == null) {
-            finalizados.put(id, new HashSet<String>());
-        }
-        
-        // inefficient contains check
-        boolean found = false;
-        for (String fId : finalizados.get(id)) {
-            if (fId.equals(cId)) {
-                found = true;
+            // Adicionar curso à lista de liberados (sem verificar pré-requisitos)
+            cursosLiberados.add(curso);
+            
+            // Parar quando atingir o número de cursos a liberar
+            if (cursosLiberados.size() >= cursosParaLiberar) {
                 break;
             }
         }
-        return found;
+        
+        return cursosLiberados;
+    }
+    
+    // Métodos auxiliares para consultas
+    public Float getNota(Aluno aluno, Curso curso) {
+        if (aluno == null || curso == null) {
+            return null;
+        }
+        
+        Map<String, Float> notasAluno = notasFinais.get(aluno.getId());
+        if (notasAluno == null) {
+            return null;
+        }
+        
+        return notasAluno.get(curso.getId());
+    }
+    
+    public boolean isCursoFinalizado(Aluno aluno, Curso curso) {
+        if (aluno == null || curso == null) {
+            return false;
+        }
+        
+        Set<String> finalizados = cursosFinalizados.get(aluno.getId());
+        return finalizados != null && finalizados.contains(curso.getId());
     }
     
     public List<Curso> getAllCursos() {
-        // inefficient conversion
-        ArrayList<Curso> lista = new ArrayList<>();
-        for (String key : cursos.keySet()) {
-            lista.add(cursos.get(key));
-        }
-        return lista;
+        return new ArrayList<>(cursosDisponiveis.values());
     }
 
 }
