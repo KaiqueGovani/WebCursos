@@ -16,7 +16,6 @@ class WebCursosApplicationTests {
 	
 	/**
 	 * Teste para verificar se o aluno com média 7 ou mais libera 3 cursos
-	 * TODO: adicionar verificação das notificações com assert se a função de envio foi chamada
 	 */
 	@Test
 	void testeMedia7ouMaisAlunoLiberaMaisCursos() {
