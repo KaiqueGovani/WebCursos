@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.morangosdoamor.WebCursos.domain.Aluno;
 import com.morangosdoamor.WebCursos.domain.Curso;
+import com.morangosdoamor.WebCursos.domain.valueobject.CargaHoraria;
 
 public class CursoService {
     
@@ -29,16 +30,16 @@ public class CursoService {
         cursosFinalizados = new HashMap<>();
         
         // Inicializar cursos de exemplo - expandido para suportar o sistema de liberação
-        Curso java = new Curso("JAVA001", "Programação Java", "Curso básico de Java", 40, new String[]{});
-        Curso spring = new Curso("SPRING001", "Spring Framework", "Curso de Spring Boot", 60, new String[]{});
-        Curso web = new Curso("WEB001", "Desenvolvimento Web", "HTML, CSS, JavaScript", 50, new String[]{});
-        Curso react = new Curso("REACT001", "React.js", "Desenvolvimento com React", 45, new String[]{});
-        Curso python = new Curso("PYTHON001", "Programação Python", "Curso básico de Python", 45, new String[]{});
-        Curso django = new Curso("DJANGO001", "Django Framework", "Desenvolvimento web com Django", 55, new String[]{});
-        Curso node = new Curso("NODE001", "Node.js", "Desenvolvimento backend com Node.js", 50, new String[]{});
-        Curso angular = new Curso("ANGULAR001", "Angular", "Framework Angular para frontend", 60, new String[]{});
-        Curso vue = new Curso("VUE001", "Vue.js", "Framework Vue.js para frontend", 45, new String[]{});
-        Curso database = new Curso("DB001", "Banco de Dados", "Fundamentos de banco de dados", 40, new String[]{});
+        Curso java = new Curso("JAVA001", "Programação Java", "Curso básico de Java", new CargaHoraria(40), new String[]{});
+        Curso spring = new Curso("SPRING001", "Spring Framework", "Curso de Spring Boot", new CargaHoraria(60), new String[]{});
+        Curso web = new Curso("WEB001", "Desenvolvimento Web", "HTML, CSS, JavaScript", new CargaHoraria(50), new String[]{});
+        Curso react = new Curso("REACT001", "React.js", "Desenvolvimento com React", new CargaHoraria(45), new String[]{});
+        Curso python = new Curso("PYTHON001", "Programação Python", "Curso básico de Python", new CargaHoraria(45), new String[]{});
+        Curso django = new Curso("DJANGO001", "Django Framework", "Desenvolvimento web com Django", new CargaHoraria(55), new String[]{});
+        Curso node = new Curso("NODE001", "Node.js", "Desenvolvimento backend com Node.js", new CargaHoraria(50), new String[]{});
+        Curso angular = new Curso("ANGULAR001", "Angular", "Framework Angular para frontend", new CargaHoraria(60), new String[]{});
+        Curso vue = new Curso("VUE001", "Vue.js", "Framework Vue.js para frontend", new CargaHoraria(45), new String[]{});
+        Curso database = new Curso("DB001", "Banco de Dados", "Fundamentos de banco de dados", new CargaHoraria(40), new String[]{});
         
         cursosDisponiveis.put(java.getId(), java);
         cursosDisponiveis.put(spring.getId(), spring);

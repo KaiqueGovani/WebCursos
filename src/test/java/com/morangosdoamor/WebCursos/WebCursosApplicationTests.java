@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.morangosdoamor.WebCursos.domain.Aluno;
 import com.morangosdoamor.WebCursos.domain.Curso;
+import com.morangosdoamor.WebCursos.domain.valueobject.CargaHoraria;
 import com.morangosdoamor.WebCursos.service.CursoService;
 
 @SpringBootTest
@@ -96,7 +97,7 @@ class WebCursosApplicationTests {
 	void testeGetNotaComAlunoNulo() {
 		// Arrange
 		CursoService cursoService = new CursoService();
-		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", 40, new String[]{});
+		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", new CargaHoraria(40), new String[]{});
 
 		// Act
 		Float nota = cursoService.getNota(null, curso);
@@ -123,7 +124,7 @@ class WebCursosApplicationTests {
 		// Arrange
 		Aluno aluno = new Aluno();
 		CursoService cursoService = new CursoService();
-		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", 40, new String[]{});
+		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", new CargaHoraria(40), new String[]{});
 
 		// Act
 		Float nota = cursoService.getNota(aluno, curso);
@@ -153,7 +154,7 @@ class WebCursosApplicationTests {
 	void testeIsCursoFinalizadoComAlunoNulo() {
 		// Arrange
 		CursoService cursoService = new CursoService();
-		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", 40, new String[]{});
+		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", new CargaHoraria(40), new String[]{});
 
 		// Act
 		boolean finalizado = cursoService.isCursoFinalizado(null, curso);
@@ -266,7 +267,7 @@ class WebCursosApplicationTests {
 	void testeFinalizarCursoComAlunoNulo() {
 		// Arrange
 		CursoService cursoService = new CursoService();
-		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", 40, new String[]{});
+		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", new CargaHoraria(40), new String[]{});
 
 		// Act & Assert
 		try {
@@ -331,7 +332,7 @@ class WebCursosApplicationTests {
 		// Arrange
 		Aluno aluno = new Aluno();
 		CursoService cursoService = new CursoService();
-		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", 40, new String[]{});
+		Curso curso = new Curso("JAVA001", "Java", "Curso de Java", new CargaHoraria(40), new String[]{});
 
 		// Act & Assert
 		try {
