@@ -1,23 +1,31 @@
-package com.morangosdoamor.WebCursos.domain;
+package com.morangosdoamor.WebCursos.model.entity;
 
 import java.util.Objects;
 
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
+@Entity
 public class Curso {
+    @Id
     private String id;
     private String nome;
     private String descricao;
     private int cargaHoraria;
-    private String[] prerequisitos;
+    
+    @ElementCollection
+    private String[] preRequisitos;
     
     public Curso() {
     }
     
-    public Curso(String id, String nome, String descricao, int cargaHoraria, String[] prerequisitos) {
+    public Curso(String id, String nome, String descricao, int cargaHoraria, String[] preRequisitos) {
         this.id = id;
         this.nome = nome;
         this.descricao = descricao;
         this.cargaHoraria = cargaHoraria;
-        this.prerequisitos = prerequisitos;
+        this.preRequisitos = preRequisitos;
     }
     
     // Getters and Setters
@@ -53,12 +61,12 @@ public class Curso {
         this.cargaHoraria = cargaHoraria;
     }
     
-    public String[] getPrerequisitos() {
-        return prerequisitos;
+    public String[] getPreRequisitos() {
+        return preRequisitos;
     }
     
-    public void setPrerequisitos(String[] prerequisitos) {
-        this.prerequisitos = prerequisitos;
+    public void setPreRequisitos(String[] preRequisitos) {
+        this.preRequisitos = preRequisitos;
     }
     
     @Override
