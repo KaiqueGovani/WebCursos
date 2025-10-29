@@ -52,6 +52,8 @@ class WebCursosApplicationTests {
         cursoRepository.save(new Curso("REACT001", "React.js", "Desenvolvimento com React", 45, new String[]{}));
         cursoRepository.save(new Curso("PYTHON001", "Programação Python", "Curso básico de Python", 45, new String[]{}));
         cursoRepository.save(new Curso("DJANGO001", "Django Framework", "Desenvolvimento web com Django", 55, new String[]{}));
+		cursoRepository.save(new Curso("NODE001", "Node.js", "Desenvolvimento backend com Node.js", 50, new String[]{}));
+        cursoRepository.save(new Curso("ANGULAR001", "Angular", "Framework Angular para frontend", 60, new String[]{}));
 	}
 
 	/**
@@ -143,7 +145,7 @@ class WebCursosApplicationTests {
 		var todosCursos = cursoService.getAllCursos();
 
 		// Assert
-		assertEquals(6, todosCursos.size()); // 6 cursos inicializados no setUp
+		assertEquals(8, todosCursos.size()); // 8 cursos inicializados no setUp
 	}
 
 	@Test
