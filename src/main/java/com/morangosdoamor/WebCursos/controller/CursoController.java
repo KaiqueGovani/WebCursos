@@ -5,6 +5,10 @@ import com.morangosdoamor.WebCursos.dto.request.CursoUpdateDTO;
 import com.morangosdoamor.WebCursos.dto.response.CursoDetailResponseDTO;
 import com.morangosdoamor.WebCursos.dto.response.CursoResponseDTO;
 import com.morangosdoamor.WebCursos.service.CursoService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,74 +19,48 @@ import java.util.List;
 
 /**
  * Controller REST para operações de Curso
- * 
- * Clean Architecture: Camada de Interface/Adapters
- * - Adapta requisições HTTP para casos de uso do Service
- * - Bean Validation automática com @Valid
- * - Tratamento de erros delegado ao GlobalExceptionHandler
- * 
- * Endpoints:
- * POST   /api/cursos                        - Cria novo curso
- * GET    /api/cursos                        - Lista todos os cursos
- * GET    /api/cursos/{id}                   - Busca curso por ID
- * GET    /api/cursos/carga-horaria/minima  - Busca por carga horária mínima
- * GET    /api/cursos/carga-horaria/maxima  - Busca por carga horária máxima
- * PATCH  /api/cursos/{id}                   - Atualiza curso
- * DELETE /api/cursos/{id}                   - Remove curso
+ * Endpoints para CRUD completo de cursos
  */
 @RestController
 @RequestMapping("/api/cursos")
 @RequiredArgsConstructor
+@Tag(name = "Cursos", description = "Gerenciamento de cursos")
 public class CursoController {
     
     private final CursoService cursoService;
     
-    /**
-     * POST /api/cursos
-     * Cria um novo curso
-     * 
-     * @param dto dados do curso
-     * @return 201 Created com dados do curso criado
-     */
+    @Operation(summary = "Criar novo curso", description = "Cria um novo curso no sistema")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Curso criado com sucesso"),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos ou nome já cadastrado")
+    })
     @PostMapping
     public ResponseEntity<CursoResponseDTO> criar(@Valid @RequestBody CursoRequestDTO dto) {
         CursoResponseDTO criado = cursoService.criar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
     
-    /**
-     * GET /api/cursos
-     * Lista todos os cursos
-     * 
-     * @return 200 OK com lista de cursos
-     */
+    @Operation(summary = "Listar todos os cursos", description = "Retorna lista de todos os cursos cadastrados")
+    @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping
     public ResponseEntity<List<CursoResponseDTO>> listarTodos() {
         List<CursoResponseDTO> cursos = cursoService.listarTodos();
         return ResponseEntity.ok(cursos);
     }
     
-    /**
-     * GET /api/cursos/{id}
-     * Busca curso por ID com detalhes completos
-     * Inclui conversões de carga horária (dias, semanas)
-     * 
-     * @param id identificador do curso
-     * @return 200 OK com detalhes do curso
-     */
+    @Operation(summary = "Buscar curso por ID", description = "Retorna detalhes completos do curso incluindo conversões de carga horária")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Curso encontrado"),
+        @ApiResponse(responseCode = "404", description = "Curso não encontrado")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<CursoDetailResponseDTO> buscarPorId(@PathVariable String id) {
         CursoDetailResponseDTO curso = cursoService.buscarPorId(id);
         return ResponseEntity.ok(curso);
     }
     
-    /**
-     * GET /api/cursos/carga-horaria/minima?horas={horas}
-     * Busca cursos com carga horária >= valor informado
-     * 
-     * @param horas carga horária mínima
-     * @return 200 OK com lista de cursos
-     */
+    @Operation(summary = "Buscar cursos por carga horária mínima", description = "Retorna cursos com carga horária maior ou igual ao valor informado")
+    @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/carga-horaria/minima")
     public ResponseEntity<List<CursoResponseDTO>> buscarPorCargaHorariaMinima(
             @RequestParam Integer horas) {
@@ -90,13 +68,8 @@ public class CursoController {
         return ResponseEntity.ok(cursos);
     }
     
-    /**
-     * GET /api/cursos/carga-horaria/maxima?horas={horas}
-     * Busca cursos com carga horária <= valor informado
-     * 
-     * @param horas carga horária máxima
-     * @return 200 OK com lista de cursos
-     */
+    @Operation(summary = "Buscar cursos por carga horária máxima", description = "Retorna cursos com carga horária menor ou igual ao valor informado")
+    @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
     @GetMapping("/carga-horaria/maxima")
     public ResponseEntity<List<CursoResponseDTO>> buscarPorCargaHorariaMaxima(
             @RequestParam Integer horas) {
@@ -104,15 +77,12 @@ public class CursoController {
         return ResponseEntity.ok(cursos);
     }
     
-    /**
-     * PATCH /api/cursos/{id}
-     * Atualiza dados do curso (PATCH semântico)
-     * Apenas campos fornecidos são atualizados
-     * 
-     * @param id identificador do curso
-     * @param dto dados a atualizar
-     * @return 200 OK com dados atualizados
-     */
+    @Operation(summary = "Atualizar curso", description = "Atualiza dados do curso (apenas campos fornecidos)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Curso atualizado com sucesso"),
+        @ApiResponse(responseCode = "404", description = "Curso não encontrado"),
+        @ApiResponse(responseCode = "400", description = "Dados inválidos")
+    })
     @PatchMapping("/{id}")
     public ResponseEntity<CursoResponseDTO> atualizar(
             @PathVariable String id,
@@ -121,13 +91,11 @@ public class CursoController {
         return ResponseEntity.ok(atualizado);
     }
     
-    /**
-     * DELETE /api/cursos/{id}
-     * Remove curso do sistema
-     * 
-     * @param id identificador do curso
-     * @return 204 No Content
-     */
+    @Operation(summary = "Excluir curso", description = "Remove curso do sistema")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Curso excluído com sucesso"),
+        @ApiResponse(responseCode = "404", description = "Curso não encontrado")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluir(@PathVariable String id) {
         cursoService.excluir(id);
