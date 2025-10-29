@@ -1,7 +1,9 @@
 package com.morangosdoamor.WebCursos.domain.valueobject;
 
+import jakarta.persistence.Embeddable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 /**
@@ -9,21 +11,23 @@ import lombok.ToString;
  * Justificativa: Matrícula é um identificador com formato e regras específicas,
  * deve seguir padrão definido e ser único no contexto do negócio.
  */
+@Embeddable
 @Getter
+@NoArgsConstructor
 @EqualsAndHashCode
 @ToString
 public class Matricula {
     private static final int TAMANHO_MINIMO = 5;
     private static final int TAMANHO_MAXIMO = 20;
     
-    private final String valor;
+    private String matricula;
     
-    public Matricula(String valor) {
-        if (valor == null || valor.isBlank()) {
+    public Matricula(String matricula) {
+        if (matricula == null || matricula.isBlank()) {
             throw new IllegalArgumentException("Matrícula não pode ser nula ou vazia");
         }
         
-        String matriculaNormalizada = valor.trim();
+        String matriculaNormalizada = matricula.trim();
         
         if (matriculaNormalizada.length() < TAMANHO_MINIMO || 
             matriculaNormalizada.length() > TAMANHO_MAXIMO) {
@@ -33,6 +37,6 @@ public class Matricula {
             );
         }
         
-        this.valor = matriculaNormalizada;
+        this.matricula = matriculaNormalizada;
     }
 }
