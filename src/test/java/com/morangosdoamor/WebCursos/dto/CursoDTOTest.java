@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -133,7 +132,6 @@ class CursoDTOTest {
     @DisplayName("CursoDetailResponseDTO deve construir com conversões e metadados")
     void cursoDetailResponseDTODeveConstruirComConversoesEMetadados() {
         // Arrange
-        LocalDateTime now = LocalDateTime.now();
         String[] prerequisitos = {"JavaScript", "React"};
         
         // Act
@@ -145,18 +143,15 @@ class CursoDTOTest {
             .cargaHorariaEmDias(7.0)
             .cargaHorariaEmSemanas(2.0)
             .prerequisitos(prerequisitos)
-            .criadoEm(now)
-            .atualizadoEm(now)
             .build();
         
         // Assert
         assertNotNull(dto);
         assertEquals("id-456", dto.getId());
+        assertEquals("React Native", dto.getNome());
         assertEquals(50, dto.getCargaHoraria());
         assertEquals(7.0, dto.getCargaHorariaEmDias());
         assertEquals(2.0, dto.getCargaHorariaEmSemanas());
         assertArrayEquals(prerequisitos, dto.getPrerequisitos());
-        assertEquals(now, dto.getCriadoEm());
-        assertEquals(now, dto.getAtualizadoEm());
     }
 }

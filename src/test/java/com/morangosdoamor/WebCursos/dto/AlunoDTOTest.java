@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -133,25 +132,21 @@ class AlunoDTOTest {
     }
     
     @Test
-    @DisplayName("AlunoDetailResponseDTO deve construir com metadados")
-    void alunoDetailResponseDTODeveConstruirComMetadados() {
-        // Arrange
-        LocalDateTime now = LocalDateTime.now();
-        
+    @DisplayName("AlunoDetailResponseDTO deve construir corretamente")
+    void alunoDetailResponseDTODeveConstruirCorretamente() {
         // Act
         AlunoDetailResponseDTO dto = AlunoDetailResponseDTO.builder()
             .id("id-456")
             .nome("Pedro Oliveira")
             .email("pedro@exemplo.com")
             .matricula("MAT99999")
-            .criadoEm(now)
-            .atualizadoEm(now)
             .build();
         
         // Assert
         assertNotNull(dto);
         assertEquals("id-456", dto.getId());
-        assertEquals(now, dto.getCriadoEm());
-        assertEquals(now, dto.getAtualizadoEm());
+        assertEquals("Pedro Oliveira", dto.getNome());
+        assertEquals("pedro@exemplo.com", dto.getEmail());
+        assertEquals("MAT99999", dto.getMatricula());
     }
 }

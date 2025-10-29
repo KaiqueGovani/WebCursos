@@ -103,12 +103,8 @@ public class CursoMapper {
             .descricao(entity.getDescricao())
             .cargaHoraria(carga != null ? carga.getCargaHoraria() : null)
             .prerequisitos(entity.getPrerequisitos())
-            // Informações derivadas do Value Object
             .cargaHorariaEmDias(carga != null ? Double.valueOf(carga.emDias()) : null)
             .cargaHorariaEmSemanas(carga != null ? Double.valueOf(carga.emSemanas()) : null)
-            // Timestamps para auditoria futura
-            .criadoEm(null)
-            .atualizadoEm(null)
             .build();
     }
 }

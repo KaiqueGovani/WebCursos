@@ -93,9 +93,6 @@ public class AlunoMapper {
             .nome(entity.getNome())
             .email(entity.getEmail() != null ? entity.getEmail().getEmail() : null)
             .matricula(entity.getMatricula() != null ? entity.getMatricula().getMatricula() : null)
-            // Timestamps serão adicionados quando implementarmos auditoria
-            .criadoEm(null)
-            .atualizadoEm(null)
             .build();
     }
 }
