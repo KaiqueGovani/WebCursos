@@ -1,236 +1,141 @@
 package com.morangosdoamor.WebCursos.service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import com.morangosdoamor.WebCursos.domain.Aluno;
 import com.morangosdoamor.WebCursos.domain.Curso;
 import com.morangosdoamor.WebCursos.domain.valueobject.CargaHoraria;
+import com.morangosdoamor.WebCursos.dto.mapper.CursoMapper;
+import com.morangosdoamor.WebCursos.dto.request.CursoRequestDTO;
+import com.morangosdoamor.WebCursos.dto.request.CursoUpdateDTO;
+import com.morangosdoamor.WebCursos.dto.response.CursoDetailResponseDTO;
+import com.morangosdoamor.WebCursos.dto.response.CursoResponseDTO;
+import com.morangosdoamor.WebCursos.exception.BusinessException;
+import com.morangosdoamor.WebCursos.exception.ResourceNotFoundException;
+import com.morangosdoamor.WebCursos.repository.CursoRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Service de Curso - Camada de Aplicação
+ * 
+ * Responsabilidades (Clean Architecture):
+ * - Orquestrar casos de uso
+ * - Validar regras de negócio
+ * - Coordenar transações
+ * - Converter entre Domain e DTOs
+ * 
+ * DDD: Application Service que coordena agregados
+ */
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class CursoService {
     
-    // In-memory data structures
-    private Map<String, Curso> cursosDisponiveis; // cursoId -> Curso
-    private Map<String, Set<String>> matriculas; // alunoId -> Set<cursoId>
-    private Map<String, Map<String, Float>> notasFinais; // alunoId -> cursoId -> nota
-    private Map<String, Set<String>> cursosFinalizados; // alunoId -> Set<cursoId>
+    private final CursoRepository cursoRepository;
     
-    public CursoService() {
-        initializeData();
+    /**
+     * Cria um novo curso
+     * @Transactional para garantir consistência
+     */
+    @Transactional
+    public CursoResponseDTO criar(CursoRequestDTO dto) {
+        validarNomeDuplicado(dto.getNome());
+        
+        Curso curso = CursoMapper.toEntity(dto);
+        Curso salvo = cursoRepository.save(curso);
+        
+        return CursoMapper.toResponseDTO(salvo);
     }
     
-    private void initializeData() {
-        cursosDisponiveis = new HashMap<>();
-        matriculas = new HashMap<>();
-        notasFinais = new HashMap<>();
-        cursosFinalizados = new HashMap<>();
+    /**
+     * Busca curso por ID
+     * Retorna detalhes completos incluindo conversões de carga horária
+     */
+    public CursoDetailResponseDTO buscarPorId(String id) {
+        Curso curso = cursoRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Curso", id));
         
-        // Inicializar cursos de exemplo - expandido para suportar o sistema de liberação
-        Curso java = new Curso("JAVA001", "Programação Java", "Curso básico de Java", new CargaHoraria(40), new String[]{});
-        Curso spring = new Curso("SPRING001", "Spring Framework", "Curso de Spring Boot", new CargaHoraria(60), new String[]{});
-        Curso web = new Curso("WEB001", "Desenvolvimento Web", "HTML, CSS, JavaScript", new CargaHoraria(50), new String[]{});
-        Curso react = new Curso("REACT001", "React.js", "Desenvolvimento com React", new CargaHoraria(45), new String[]{});
-        Curso python = new Curso("PYTHON001", "Programação Python", "Curso básico de Python", new CargaHoraria(45), new String[]{});
-        Curso django = new Curso("DJANGO001", "Django Framework", "Desenvolvimento web com Django", new CargaHoraria(55), new String[]{});
-        Curso node = new Curso("NODE001", "Node.js", "Desenvolvimento backend com Node.js", new CargaHoraria(50), new String[]{});
-        Curso angular = new Curso("ANGULAR001", "Angular", "Framework Angular para frontend", new CargaHoraria(60), new String[]{});
-        Curso vue = new Curso("VUE001", "Vue.js", "Framework Vue.js para frontend", new CargaHoraria(45), new String[]{});
-        Curso database = new Curso("DB001", "Banco de Dados", "Fundamentos de banco de dados", new CargaHoraria(40), new String[]{});
-        
-        cursosDisponiveis.put(java.getId(), java);
-        cursosDisponiveis.put(spring.getId(), spring);
-        cursosDisponiveis.put(web.getId(), web);
-        cursosDisponiveis.put(react.getId(), react);
-        cursosDisponiveis.put(python.getId(), python);
-        cursosDisponiveis.put(django.getId(), django);
-        cursosDisponiveis.put(node.getId(), node);
-        cursosDisponiveis.put(angular.getId(), angular);
-        cursosDisponiveis.put(vue.getId(), vue);
-        cursosDisponiveis.put(database.getId(), database);
+        return CursoMapper.toDetailResponseDTO(curso);
     }
-
-    public void adicionarCurso(Aluno aluno, String cursoId) {
-        validateAdicionarCursoParams(aluno, cursoId);
-        validateCursoExists(cursoId);
-        
-        String alunoId = aluno.getId();
-        validateAlunoNaoMatriculado(alunoId, cursoId);
-        
-        // Adicionar matrícula (sem verificar pré-requisitos para o novo sistema de liberação)
-        matriculas.computeIfAbsent(alunoId, k -> new HashSet<>()).add(cursoId);
+    
+    /**
+     * Lista todos os cursos
+     */
+    public List<CursoResponseDTO> listarTodos() {
+        return cursoRepository.findAll().stream()
+            .map(CursoMapper::toResponseDTO)
+            .collect(Collectors.toList());
     }
-
-    public ArrayList<Curso> getCursos(Aluno aluno) {
-        if (aluno == null) {
-            return new ArrayList<>();
+    
+    /**
+     * Busca cursos por carga horária mínima
+     * DDD: expõe consulta específica do domínio
+     */
+    public List<CursoResponseDTO> buscarPorCargaHorariaMinima(Integer horasMinimas) {
+        if (horasMinimas == null || horasMinimas < 0) {
+            throw new BusinessException("Carga horária mínima deve ser maior ou igual a zero");
         }
         
-        String alunoId = aluno.getId();
-        Set<String> cursosMatriculados = matriculas.getOrDefault(alunoId, new HashSet<>());
-        
-        ArrayList<Curso> cursos = new ArrayList<>();
-        for (String cursoId : cursosMatriculados) {
-            Curso curso = cursosDisponiveis.get(cursoId);
-            if (curso != null) {
-                cursos.add(curso);
-            }
+        return cursoRepository.findByCargaHorariaMinima(horasMinimas).stream()
+            .map(CursoMapper::toResponseDTO)
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Busca cursos por carga horária máxima
+     */
+    public List<CursoResponseDTO> buscarPorCargaHorariaMaxima(Integer horasMaximas) {
+        if (horasMaximas == null || horasMaximas < 0) {
+            throw new BusinessException("Carga horária máxima deve ser maior ou igual a zero");
         }
         
-        return cursos;
+        return cursoRepository.findByCargaHorariaMaxima(horasMaximas).stream()
+            .map(CursoMapper::toResponseDTO)
+            .collect(Collectors.toList());
     }
-
-    public void finalizarCurso(Aluno aluno, Curso curso, float nota) {
-        validateFinalizarCursoParams(aluno, curso, nota);
+    
+    /**
+     * Atualiza curso existente
+     * PATCH semântico: apenas campos fornecidos são atualizados
+     */
+    @Transactional
+    public CursoResponseDTO atualizar(String id, CursoUpdateDTO dto) {
+        Curso curso = cursoRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Curso", id));
         
-        String alunoId = aluno.getId();
-        String cursoId = curso.getId();
-        
-        validateAlunoMatriculado(alunoId, cursoId);
-        validateCursoNaoFinalizado(alunoId, cursoId);
-        
-        processarFinalizacao(alunoId, cursoId, nota);
-    }
-
-    public ArrayList<Curso> findLiberadosByAluno(Aluno aluno) {
-        if (aluno == null) {
-            return new ArrayList<>();
+        // Validar nome duplicado se estiver sendo alterado
+        if (dto.getNome() != null && !dto.getNome().equals(curso.getNome())) {
+            validarNomeDuplicado(dto.getNome());
         }
         
-        String alunoId = aluno.getId();
-        Set<String> cursosFinalizadosAluno = cursosFinalizados.getOrDefault(alunoId, new HashSet<>());
-        Set<String> cursosMatriculados = matriculas.getOrDefault(alunoId, new HashSet<>());
+        CursoMapper.updateEntityFromDto(curso, dto);
+        Curso atualizado = cursoRepository.save(curso);
         
-        int cursosParaLiberar = calculateCursosParaLiberar(cursosFinalizadosAluno.size());
-        
-        return cursosParaLiberar == 0 ? new ArrayList<>() : 
-               buscarCursosDisponiveis(cursosMatriculados, cursosFinalizadosAluno, cursosParaLiberar);
+        return CursoMapper.toResponseDTO(atualizado);
     }
     
-    // Métodos auxiliares para consultas
-    public Float getNota(Aluno aluno, Curso curso) {
-        if (!isValidAlunoAndCurso(aluno, curso)) {
-            return null;
-        }
-        
-        Map<String, Float> notasAluno = notasFinais.get(aluno.getId());
-        if (notasAluno == null) {
-            return null;
+    /**
+     * Exclui curso por ID
+     * Regra de negócio: poderia validar se há alunos matriculados
+     */
+    @Transactional
+    public void excluir(String id) {
+        if (!cursoRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Curso", id);
         }
         
-        return notasAluno.get(curso.getId());
+        cursoRepository.deleteById(id);
     }
     
-    public boolean isCursoFinalizado(Aluno aluno, Curso curso) {
-        if (!isValidAlunoAndCurso(aluno, curso)) {
-            return false;
-        }
-        
-        return isCursoFinalizadoById(aluno.getId(), curso.getId());
-    }
-    
-    public List<Curso> getAllCursos() {
-        return new ArrayList<>(cursosDisponiveis.values());
-    }
-    
-    // Métodos privados para reduzir complexidade ciclomática
-    
-    private void validateAdicionarCursoParams(Aluno aluno, String cursoId) {
-        if (aluno == null || cursoId == null || cursoId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Aluno e ID do curso são obrigatórios");
+    /**
+     * Valida se já existe curso com o mesmo nome
+     * DDD: invariante do agregado Curso
+     */
+    private void validarNomeDuplicado(String nome) {
+        if (cursoRepository.existsByNome(nome)) {
+            throw new BusinessException("Já existe um curso com o nome: " + nome);
         }
     }
-    
-    private void validateCursoExists(String cursoId) {
-        if (!cursosDisponiveis.containsKey(cursoId)) {
-            throw new IllegalArgumentException("Curso não encontrado: " + cursoId);
-        }
-    }
-    
-    private void validateAlunoNaoMatriculado(String alunoId, String cursoId) {
-        if (isAlunoMatriculadoById(alunoId, cursoId)) {
-            throw new IllegalStateException("Aluno já está matriculado neste curso");
-        }
-    }
-    
-    private void validateFinalizarCursoParams(Aluno aluno, Curso curso, float nota) {
-        if (aluno == null || curso == null) {
-            throw new IllegalArgumentException("Aluno e curso são obrigatórios");
-        }
-        if (nota < 0 || nota > 10) {
-            throw new IllegalArgumentException("Nota deve estar entre 0 e 10");
-        }
-    }
-    
-    private void validateAlunoMatriculado(String alunoId, String cursoId) {
-        if (!isAlunoMatriculadoById(alunoId, cursoId)) {
-            throw new IllegalStateException("Aluno não está matriculado neste curso");
-        }
-    }
-    
-    private void validateCursoNaoFinalizado(String alunoId, String cursoId) {
-        if (isCursoFinalizadoById(alunoId, cursoId)) {
-            throw new IllegalStateException("Curso já foi finalizado");
-        }
-    }
-    
-    private void processarFinalizacao(String alunoId, String cursoId, float nota) {
-        // Registrar nota
-        notasFinais.computeIfAbsent(alunoId, k -> new HashMap<>()).put(cursoId, nota);
-        
-        // Se aprovado (nota >= 7), marcar como finalizado
-        if (isNotaAprovacao(nota)) {
-            cursosFinalizados.computeIfAbsent(alunoId, k -> new HashSet<>()).add(cursoId);
-        }
-        
-        // Remover da lista de matrículas ativas
-        matriculas.get(alunoId).remove(cursoId);
-    }
-    
-    private boolean isNotaAprovacao(float nota) {
-        return nota >= 7.0f;
-    }
-    
-    private int calculateCursosParaLiberar(int cursosFinalizados) {
-        return cursosFinalizados * 3;
-    }
-    
-    private ArrayList<Curso> buscarCursosDisponiveis(Set<String> cursosMatriculados, 
-                                                     Set<String> cursosFinalizados, 
-                                                     int cursosParaLiberar) {
-        ArrayList<Curso> cursosLiberados = new ArrayList<>();
-        
-        for (Curso curso : cursosDisponiveis.values()) {
-            if (podeLiberar(curso.getId(), cursosMatriculados, cursosFinalizados)) {
-                cursosLiberados.add(curso);
-                
-                if (cursosLiberados.size() >= cursosParaLiberar) {
-                    break;
-                }
-            }
-        }
-        
-        return cursosLiberados;
-    }
-    
-    private boolean podeLiberar(String cursoId, Set<String> cursosMatriculados, Set<String> cursosFinalizados) {
-        return !cursosMatriculados.contains(cursoId) && !cursosFinalizados.contains(cursoId);
-    }
-    
-    private boolean isValidAlunoAndCurso(Aluno aluno, Curso curso) {
-        return aluno != null && curso != null;
-    }
-    
-    private boolean isCursoFinalizadoById(String alunoId, String cursoId) {
-        Set<String> finalizados = cursosFinalizados.get(alunoId);
-        return finalizados != null && finalizados.contains(cursoId);
-    }
-    
-    private boolean isAlunoMatriculadoById(String alunoId, String cursoId) {
-        return matriculas.containsKey(alunoId) && matriculas.get(alunoId).contains(cursoId);
-    }
-
 }
