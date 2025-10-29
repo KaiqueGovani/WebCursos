@@ -123,3 +123,18 @@ Os cenários BDD são implementados como testes automatizados que guiam o desenv
 ✅ **Testes Unitários** - Cobrindo cenários principais BDD  
 🚧 **Interface Web** - Próxima fase de desenvolvimento  
 🚧 **Sistema de Notificações** - Planejado para implementação futura
+
+## Docker
+
+Build da imagem e execução (porta configurada para 8081):
+
+```bash
+docker build -t webcursos .
+docker run --rm -p 8081:8081 webcursos
+```
+
+Variáveis opcionais de JVM:
+
+```bash
+docker run --rm -p 8081:8081 -e JAVA_OPTS="-Xms256m -Xmx512m" webcursos
+```
