@@ -258,6 +258,42 @@ class CursoServiceTest {
         
         assertTrue(exception.getMessage().contains("Carga horária máxima"));
     }
+
+    @Test
+    @DisplayName("Deve lançar exceção para carga horária máxima negativa")
+    void deveLancarExcecaoParaCargaHorariaMaximaNegativa() {
+        // Act & Assert
+        BusinessException exception = assertThrows(
+            BusinessException.class,
+            () -> cursoService.buscarPorCargaHorariaMaxima(-10)
+        );
+        
+        assertTrue(exception.getMessage().contains("maior ou igual a zero"));
+        verify(cursoRepository, never()).findByCargaHorariaMaxima(anyInt());
+    }
+    
+    @Test
+    @DisplayName("Deve lançar exceção ao tentar atualizar curso inexistente")
+    void deveLancarExcecaoAoTentarAtualizarCursoInexistente() {
+        // Arrange
+        String id = "id-inexistente";
+        CursoUpdateDTO dto = CursoUpdateDTO.builder()
+            .nome("Nome Atualizado")
+            .build();
+        
+        when(cursoRepository.findById(id)).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> cursoService.atualizar(id, dto)
+        );
+        
+        assertTrue(exception.getMessage().contains("Curso"));
+        assertTrue(exception.getMessage().contains(id));
+        verify(cursoRepository, times(1)).findById(id);
+        verify(cursoRepository, never()).save(any(Curso.class));
+    }
     
     @Test
     @DisplayName("Deve atualizar curso")
@@ -349,5 +385,126 @@ class CursoServiceTest {
         
         assertTrue(exception.getMessage().contains("Curso"));
         verify(cursoRepository, never()).deleteById(anyString());
+    }
+
+    @Test
+    @DisplayName("Deve atualizar curso sem alterar nome")
+    void deveAtualizarCursoSemAlterarNome() {
+        // Arrange
+        String id = "id-update-same";
+        Curso cursoExistente = new Curso(
+            id,
+            "Curso Java",
+            "Descrição antiga",
+            new CargaHoraria(40),
+            new String[]{"Python"}
+        );
+        
+        CursoUpdateDTO dto = CursoUpdateDTO.builder()
+            .nome("Curso Java") // Mesmo nome
+            .descricao("Descrição nova")
+            .cargaHoraria(60)
+            .build();
+        
+        when(cursoRepository.findById(id)).thenReturn(Optional.of(cursoExistente));
+        when(cursoRepository.save(any(Curso.class))).thenReturn(cursoExistente);
+        
+        // Act
+        CursoResponseDTO resultado = cursoService.atualizar(id, dto);
+        
+        // Assert
+        assertNotNull(resultado);
+        // Não deve validar nome duplicado se não mudou
+        verify(cursoRepository, never()).existsByNome(anyString());
+        verify(cursoRepository, times(1)).save(any(Curso.class));
+    }
+
+    @Test
+    @DisplayName("Deve atualizar apenas descrição mantendo nome inalterado")
+    void deveAtualizarApenasDescricao() {
+        // Arrange
+        String id = "id-desc-only";
+        Curso cursoExistente = new Curso(
+            id,
+            "Curso Original",
+            "Descrição Original",
+            new CargaHoraria(30),
+            null
+        );
+        
+        CursoUpdateDTO dto = CursoUpdateDTO.builder()
+            .descricao("Nova Descrição")
+            // nome não fornecido (null)
+            .build();
+        
+        when(cursoRepository.findById(id)).thenReturn(Optional.of(cursoExistente));
+        when(cursoRepository.save(any(Curso.class))).thenReturn(cursoExistente);
+        
+        // Act
+        cursoService.atualizar(id, dto);
+        
+        // Assert
+        // Não deve validar nome se não foi fornecido
+        verify(cursoRepository, never()).existsByNome(anyString());
+    }
+
+    @Test
+    @DisplayName("Deve atualizar curso alterando nome para um novo nome único")
+    void deveAtualizarCursoAlterandoNomeParaNovoNomeUnico() {
+        // Arrange
+        String id = "id-change-name";
+        Curso cursoExistente = new Curso(
+            id,
+            "Curso Antigo",
+            "Descrição",
+            new CargaHoraria(40),
+            null
+        );
+        
+        CursoUpdateDTO dto = CursoUpdateDTO.builder()
+            .nome("Curso Novo") // Nome diferente
+            .build();
+        
+        when(cursoRepository.findById(id)).thenReturn(Optional.of(cursoExistente));
+        when(cursoRepository.existsByNome("Curso Novo")).thenReturn(false); // Nome disponível
+        when(cursoRepository.save(any(Curso.class))).thenReturn(cursoExistente);
+        
+        // Act
+        cursoService.atualizar(id, dto);
+        
+        // Assert
+        verify(cursoRepository, times(1)).existsByNome("Curso Novo"); // Deve validar
+        verify(cursoRepository, times(1)).save(any(Curso.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao tentar atualizar nome para um já existente")
+    void deveLancarExcecaoAoTentarAtualizarNomeParaJaExistente() {
+        // Arrange
+        String id = "id-name-exists";
+        Curso cursoExistente = new Curso(
+            id,
+            "Curso Original",
+            "Descrição",
+            new CargaHoraria(50),
+            null
+        );
+        
+        CursoUpdateDTO dto = CursoUpdateDTO.builder()
+            .nome("Curso Duplicado")
+            .build();
+        
+        when(cursoRepository.findById(id)).thenReturn(Optional.of(cursoExistente));
+        when(cursoRepository.existsByNome("Curso Duplicado")).thenReturn(true); // Nome já existe
+        
+        // Act & Assert
+        BusinessException exception = assertThrows(
+            BusinessException.class,
+            () -> cursoService.atualizar(id, dto)
+        );
+        
+        assertTrue(exception.getMessage().contains("Já existe um curso com o nome"));
+        verify(cursoRepository, times(1)).existsByNome("Curso Duplicado");
+        verify(cursoRepository, never()).save(any(Curso.class));
     }
 }

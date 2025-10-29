@@ -206,6 +206,65 @@ class AlunoServiceTest {
         
         verify(alunoRepository, times(1)).findByEmail(any(Email.class));
     }
+
+    @Test
+    @DisplayName("Deve buscar aluno por matrícula")
+    void deveBuscarAlunoPorMatricula() {
+        // Arrange
+        String matricula = "MAT12345";
+        Aluno aluno = new Aluno(
+            "id-789",
+            "Paulo Souza",
+            new Email("paulo@exemplo.com"),
+            new Matricula(matricula)
+        );
+        
+        when(alunoRepository.findByMatricula(any(Matricula.class))).thenReturn(Optional.of(aluno));
+        
+        // Act
+        AlunoResponseDTO resultado = alunoService.buscarPorMatricula(matricula);
+        
+        // Assert
+        assertNotNull(resultado);
+        assertEquals("Paulo Souza", resultado.getNome());
+        assertEquals(matricula, resultado.getMatricula());
+        
+        verify(alunoRepository, times(1)).findByMatricula(any(Matricula.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao buscar aluno por matrícula inexistente")
+    void deveLancarExcecaoAoBuscarAlunoPorMatriculaInexistente() {
+        // Arrange
+        String matricula = "MATINEXISTENTE";
+        when(alunoRepository.findByMatricula(any(Matricula.class))).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> alunoService.buscarPorMatricula(matricula)
+        );
+        
+        assertTrue(exception.getMessage().contains("matrícula"));
+        verify(alunoRepository, times(1)).findByMatricula(any(Matricula.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao buscar aluno por email inexistente")
+    void deveLancarExcecaoAoBuscarAlunoPorEmailInexistente() {
+        // Arrange
+        String email = "inexistente@exemplo.com";
+        when(alunoRepository.findByEmail(any(Email.class))).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> alunoService.buscarPorEmail(email)
+        );
+        
+        assertTrue(exception.getMessage().contains("email"));
+        verify(alunoRepository, times(1)).findByEmail(any(Email.class));
+    }
     
     @Test
     @DisplayName("Deve listar todos os alunos")
@@ -227,6 +286,29 @@ class AlunoServiceTest {
         verify(alunoRepository, times(1)).findAll();
     }
     
+    @Test
+    @DisplayName("Deve lançar exceção ao tentar atualizar aluno inexistente")
+    void deveLancarExcecaoAoTentarAtualizarAlunoInexistente() {
+        // Arrange
+        String id = "id-inexistente";
+        AlunoUpdateDTO dto = AlunoUpdateDTO.builder()
+            .nome("Nome Atualizado")
+            .build();
+        
+        when(alunoRepository.findById(id)).thenReturn(Optional.empty());
+        
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
+            () -> alunoService.atualizar(id, dto)
+        );
+        
+        assertTrue(exception.getMessage().contains("Aluno"));
+        assertTrue(exception.getMessage().contains(id));
+        verify(alunoRepository, times(1)).findById(id);
+        verify(alunoRepository, never()).save(any(Aluno.class));
+    }
+
     @Test
     @DisplayName("Deve atualizar aluno")
     void deveAtualizarAluno() {
@@ -314,5 +396,182 @@ class AlunoServiceTest {
         
         assertTrue(exception.getMessage().contains("Aluno"));
         verify(alunoRepository, never()).deleteById(anyString());
+    }
+
+    @Test
+    @DisplayName("Deve atualizar aluno sem alterar email e matrícula")
+    void deveAtualizarAlunoSemAlterarEmailEMatricula() {
+        // Arrange
+        String id = "id-update-same";
+        Aluno alunoExistente = new Aluno(
+            id,
+            "Nome Antigo",
+            new Email("mesmo@exemplo.com"),
+            new Matricula("MAT99999")
+        );
+        
+        AlunoUpdateDTO dto = AlunoUpdateDTO.builder()
+            .nome("Nome Novo")
+            .email("mesmo@exemplo.com") // Mesmo email
+            .matricula("MAT99999") // Mesma matrícula
+            .build();
+        
+        when(alunoRepository.findById(id)).thenReturn(Optional.of(alunoExistente));
+        when(alunoRepository.save(any(Aluno.class))).thenReturn(alunoExistente);
+        
+        // Act
+        AlunoResponseDTO resultado = alunoService.atualizar(id, dto);
+        
+        // Assert
+        assertNotNull(resultado);
+        // Não deve validar email/matrícula únicos se não mudaram
+        verify(alunoRepository, never()).existsByEmail(any());
+        verify(alunoRepository, never()).existsByMatricula(any());
+        verify(alunoRepository, times(1)).save(any(Aluno.class));
+    }
+
+    @Test
+    @DisplayName("Deve atualizar apenas nome mantendo email e matrícula inalterados")
+    void deveAtualizarApenasNome() {
+        // Arrange
+        String id = "id-nome-only";
+        Aluno alunoExistente = new Aluno(
+            id,
+            "Nome Original",
+            new Email("original@exemplo.com"),
+            new Matricula("MATORIGINAL")
+        );
+        
+        AlunoUpdateDTO dto = AlunoUpdateDTO.builder()
+            .nome("Nome Atualizado")
+            // email e matricula não fornecidos (null)
+            .build();
+        
+        when(alunoRepository.findById(id)).thenReturn(Optional.of(alunoExistente));
+        when(alunoRepository.save(any(Aluno.class))).thenReturn(alunoExistente);
+        
+        // Act
+        alunoService.atualizar(id, dto);
+        
+        // Assert
+        // Não deve validar email/matrícula se não foram fornecidos
+        verify(alunoRepository, never()).existsByEmail(any());
+        verify(alunoRepository, never()).existsByMatricula(any());
+    }
+
+    @Test
+    @DisplayName("Deve atualizar aluno alterando email para um novo email único")
+    void deveAtualizarAlunoAlterandoEmailParaNovoEmailUnico() {
+        // Arrange
+        String id = "id-change-email";
+        Aluno alunoExistente = new Aluno(
+            id,
+            "João Silva",
+            new Email("antigo@exemplo.com"),
+            new Matricula("MAT12345")
+        );
+        
+        AlunoUpdateDTO dto = AlunoUpdateDTO.builder()
+            .email("novo@exemplo.com") // Email diferente
+            .build();
+        
+        when(alunoRepository.findById(id)).thenReturn(Optional.of(alunoExistente));
+        when(alunoRepository.existsByEmail(any(Email.class))).thenReturn(false); // Email disponível
+        when(alunoRepository.save(any(Aluno.class))).thenReturn(alunoExistente);
+        
+        // Act
+        alunoService.atualizar(id, dto);
+        
+        // Assert
+        verify(alunoRepository, times(1)).existsByEmail(any(Email.class)); // Deve validar
+        verify(alunoRepository, times(1)).save(any(Aluno.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao tentar atualizar email para um já existente")
+    void deveLancarExcecaoAoTentarAtualizarEmailParaJaExistente() {
+        // Arrange
+        String id = "id-email-exists";
+        Aluno alunoExistente = new Aluno(
+            id,
+            "Maria Santos",
+            new Email("maria@exemplo.com"),
+            new Matricula("MAT99999")
+        );
+        
+        AlunoUpdateDTO dto = AlunoUpdateDTO.builder()
+            .email("duplicado@exemplo.com")
+            .build();
+        
+        when(alunoRepository.findById(id)).thenReturn(Optional.of(alunoExistente));
+        when(alunoRepository.existsByEmail(any(Email.class))).thenReturn(true); // Email já existe
+        
+        // Act & Assert
+        BusinessException exception = assertThrows(
+            BusinessException.class,
+            () -> alunoService.atualizar(id, dto)
+        );
+        
+        assertTrue(exception.getMessage().contains("Email já cadastrado"));
+        verify(alunoRepository, times(1)).existsByEmail(any(Email.class));
+        verify(alunoRepository, never()).save(any(Aluno.class));
+    }
+
+    @Test
+    @DisplayName("Deve atualizar aluno alterando matrícula para uma nova matrícula única")
+    void deveAtualizarAlunoAlterandoMatriculaParaNovaMatriculaUnica() {
+        // Arrange
+        String id = "id-change-mat";
+        Aluno alunoExistente = new Aluno(
+            id,
+            "Pedro Oliveira",
+            new Email("pedro@exemplo.com"),
+            new Matricula("MATANTIGA")
+        );
+        
+        AlunoUpdateDTO dto = AlunoUpdateDTO.builder()
+            .matricula("MATNOVA") // Matrícula diferente
+            .build();
+        
+        when(alunoRepository.findById(id)).thenReturn(Optional.of(alunoExistente));
+        when(alunoRepository.existsByMatricula(any(Matricula.class))).thenReturn(false); // Disponível
+        when(alunoRepository.save(any(Aluno.class))).thenReturn(alunoExistente);
+        
+        // Act
+        alunoService.atualizar(id, dto);
+        
+        // Assert
+        verify(alunoRepository, times(1)).existsByMatricula(any(Matricula.class)); // Deve validar
+        verify(alunoRepository, times(1)).save(any(Aluno.class));
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao tentar atualizar matrícula para uma já existente")
+    void deveLancarExcecaoAoTentarAtualizarMatriculaParaJaExistente() {
+        // Arrange
+        String id = "id-mat-exists";
+        Aluno alunoExistente = new Aluno(
+            id,
+            "Ana Costa",
+            new Email("ana@exemplo.com"),
+            new Matricula("MAT11111")
+        );
+        
+        AlunoUpdateDTO dto = AlunoUpdateDTO.builder()
+            .matricula("MATDUPLICADA")
+            .build();
+        
+        when(alunoRepository.findById(id)).thenReturn(Optional.of(alunoExistente));
+        when(alunoRepository.existsByMatricula(any(Matricula.class))).thenReturn(true); // Já existe
+        
+        // Act & Assert
+        BusinessException exception = assertThrows(
+            BusinessException.class,
+            () -> alunoService.atualizar(id, dto)
+        );
+        
+        assertTrue(exception.getMessage().contains("Matrícula já cadastrada"));
+        verify(alunoRepository, times(1)).existsByMatricula(any(Matricula.class));
+        verify(alunoRepository, never()).save(any(Aluno.class));
     }
 }
