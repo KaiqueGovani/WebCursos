@@ -1,0 +1,71 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1024 >>
+stream
+BT
+/F1 14 Tf
+72 760 Td
+(WebCursos API - Documentacao Swagger) Tj
+0 -18 Td
+() Tj
+0 -18 Td
+(Gerado em: 2025-10-29 00:41 UTC) Tj
+0 -18 Td
+() Tj
+0 -18 Td
+(Endpoints principais:) Tj
+0 -18 Td
+(POST /api/v1/alunos - Cadastra um novo aluno) Tj
+0 -18 Td
+(GET /api/v1/alunos/{alunoId} - Consulta dados do aluno) Tj
+0 -18 Td
+(GET /api/v1/alunos/{alunoId}/matriculas - Lista matriculas ativas) Tj
+0 -18 Td
+(POST /api/v1/alunos/{alunoId}/matriculas - Matricula em curso) Tj
+0 -18 Td
+(POST /api/v1/alunos/{alunoId}/matriculas/{matriculaId}/conclusao - Finaliza curso) Tj
+0 -18 Td
+(GET /api/v1/alunos/{alunoId}/cursos/liberados - Lista cursos liberados) Tj
+0 -18 Td
+(GET /api/v1/alunos/{alunoId}/matriculas/{matriculaId}/nota - Consulta nota) Tj
+0 -18 Td
+(GET /api/v1/cursos - Lista catalogo de cursos) Tj
+0 -18 Td
+() Tj
+0 -18 Td
+(Observacoes:) Tj
+0 -18 Td
+(- Swagger UI disponivel em /swagger-ui.html) Tj
+0 -18 Td
+(- Console H2 disponivel em /h2-console \\(profile dev\\)) Tj
+0 -18 Td
+(- Autenticacao nao requerida neste prototipo) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000247 00000 n 
+0000001322 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1392
+%%EOF
