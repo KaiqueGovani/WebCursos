@@ -12,14 +12,20 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.morangosdoamor.WebCursos.api.dto.AlunoRequest;
+import com.morangosdoamor.WebCursos.api.dto.AlunoUpdateRequest;
 import com.morangosdoamor.WebCursos.api.mapper.AlunoMapper;
 import com.morangosdoamor.WebCursos.api.mapper.CursoMapper;
 import com.morangosdoamor.WebCursos.api.mapper.MatriculaMapper;
@@ -30,6 +36,7 @@ import com.morangosdoamor.WebCursos.domain.entity.Aluno;
 import com.morangosdoamor.WebCursos.domain.entity.Curso;
 import com.morangosdoamor.WebCursos.domain.entity.Matricula;
 import com.morangosdoamor.WebCursos.domain.enums.MatriculaStatus;
+import com.morangosdoamor.WebCursos.domain.valueobject.CargaHoraria;
 import com.morangosdoamor.WebCursos.domain.valueobject.Email;
 
 @WebMvcTest(controllers = AlunoController.class)
@@ -43,13 +50,13 @@ class AlunoControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @MockitoBean
     private AlunoService alunoService;
 
-    @MockBean
+    @MockitoBean
     private MatriculaService matriculaService;
 
-    @MockBean
+    @MockitoBean
     private CursoService cursoService;
 
     @Test
@@ -66,13 +73,13 @@ class AlunoControllerTest {
 
         AlunoRequest request = new AlunoRequest("Carla", "carla@example.com", "MAT-2024");
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/alunos")
+        mockMvc.perform(post("/api/v1/alunos")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header().exists("Location"))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.nome", is("Carla")))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.email", is("carla@example.com")));
+            .andExpect(status().isCreated())
+            .andExpect(header().exists("Location"))
+            .andExpect(jsonPath("$.nome", is("Carla")))
+            .andExpect(jsonPath("$.email", is("carla@example.com")));
     }
 
     @Test
@@ -82,15 +89,15 @@ class AlunoControllerTest {
             .codigo("JAVA001")
             .nome("Java")
             .descricao("Curso")
-            .cargaHoraria(40)
+            .cargaHoraria(new CargaHoraria(40))
             .build();
 
         when(cursoService.buscarCursosLiberados(any(UUID.class))).thenReturn(List.of(curso));
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/alunos/{alunoId}/cursos/liberados", UUID.randomUUID()))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$", hasSize(1)))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].codigo", is("JAVA001")));
+        mockMvc.perform(get("/api/v1/alunos/{alunoId}/cursos/liberados", UUID.randomUUID()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].codigo", is("JAVA001")));
     }
 
     @Test
@@ -100,7 +107,7 @@ class AlunoControllerTest {
             .codigo("JAVA001")
             .nome("Java")
             .descricao("Curso")
-            .cargaHoraria(40)
+            .cargaHoraria(new CargaHoraria(40))
             .build();
 
         Matricula matricula = Matricula.builder()
@@ -112,10 +119,10 @@ class AlunoControllerTest {
 
         when(matriculaService.listarPorAluno(any(UUID.class))).thenReturn(List.of(matricula));
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/alunos/{alunoId}/matriculas", UUID.randomUUID()))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$", hasSize(1)))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].status", is("MATRICULADO")));
+        mockMvc.perform(get("/api/v1/alunos/{alunoId}/matriculas", UUID.randomUUID()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].status", is("MATRICULADO")));
     }
 
     @Test
@@ -126,7 +133,7 @@ class AlunoControllerTest {
             .codigo("JAVA001")
             .nome("Java")
             .descricao("Curso")
-            .cargaHoraria(40)
+            .cargaHoraria(new CargaHoraria(40))
             .build();
 
         Matricula matricula = Matricula.builder()
@@ -138,11 +145,11 @@ class AlunoControllerTest {
 
         when(matriculaService.matricular(alunoId, "JAVA001")).thenReturn(matricula);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/alunos/{alunoId}/matriculas", alunoId)
+        mockMvc.perform(post("/api/v1/alunos/{alunoId}/matriculas", alunoId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(new com.morangosdoamor.WebCursos.api.dto.MatriculaRequest("JAVA001"))))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isCreated())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.curso.codigo", is("JAVA001")));
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.curso.codigo", is("JAVA001")));
     }
 
     @Test
@@ -158,9 +165,9 @@ class AlunoControllerTest {
 
         when(alunoService.buscarPorId(alunoId)).thenReturn(aluno);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/alunos/{alunoId}", alunoId))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.matricula", is("MAT-33")));
+        mockMvc.perform(get("/api/v1/alunos/{alunoId}", alunoId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.matricula", is("MAT-33")));
     }
 
     @Test
@@ -172,7 +179,7 @@ class AlunoControllerTest {
             .codigo("JAVA001")
             .nome("Java")
             .descricao("Curso")
-            .cargaHoraria(40)
+            .cargaHoraria(new CargaHoraria(40))
             .build();
 
         Matricula matricula = Matricula.builder()
@@ -186,11 +193,11 @@ class AlunoControllerTest {
 
         when(matriculaService.concluir(alunoId, matriculaId, 9.0)).thenReturn(matricula);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/alunos/{alunoId}/matriculas/{matriculaId}/conclusao", alunoId, matriculaId)
+        mockMvc.perform(post("/api/v1/alunos/{alunoId}/matriculas/{matriculaId}/conclusao", alunoId, matriculaId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(new com.morangosdoamor.WebCursos.api.dto.ConclusaoRequest(9.0))))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.notaFinal", is(9.0)));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notaFinal", is(9.0)));
     }
 
     @Test
@@ -199,9 +206,9 @@ class AlunoControllerTest {
         UUID matriculaId = UUID.randomUUID();
         when(matriculaService.buscarNotaFinal(alunoId, matriculaId)).thenReturn(8.0);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/alunos/{alunoId}/matriculas/{matriculaId}/nota", alunoId, matriculaId))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("8.0"));
+        mockMvc.perform(get("/api/v1/alunos/{alunoId}/matriculas/{matriculaId}/nota", alunoId, matriculaId))
+            .andExpect(status().isOk())
+            .andExpect(content().string("8.0"));
     }
 
     @Test
@@ -210,7 +217,100 @@ class AlunoControllerTest {
         UUID matriculaId = UUID.randomUUID();
         when(matriculaService.buscarNotaFinal(alunoId, matriculaId)).thenReturn(null);
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/alunos/{alunoId}/matriculas/{matriculaId}/nota", alunoId, matriculaId))
-            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNoContent());
+        mockMvc.perform(get("/api/v1/alunos/{alunoId}/matriculas/{matriculaId}/nota", alunoId, matriculaId))
+            .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deveListarTodosOsAlunos() throws Exception {
+        Aluno aluno1 = Aluno.builder()
+            .id(UUID.randomUUID())
+            .nome("Ana")
+            .email(new Email("ana@example.com"))
+            .matricula("MAT-1")
+            .criadoEm(LocalDateTime.now())
+            .build();
+
+        Aluno aluno2 = Aluno.builder()
+            .id(UUID.randomUUID())
+            .nome("Bruno")
+            .email(new Email("bruno@example.com"))
+            .matricula("MAT-2")
+            .criadoEm(LocalDateTime.now())
+            .build();
+
+        when(alunoService.listarTodos()).thenReturn(List.of(aluno1, aluno2));
+
+        mockMvc.perform(get("/api/v1/alunos"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].nome", is("Ana")))
+            .andExpect(jsonPath("$[1].nome", is("Bruno")));
+    }
+
+    @Test
+    void deveBuscarAlunoPorEmail() throws Exception {
+        Aluno aluno = Aluno.builder()
+            .id(UUID.randomUUID())
+            .nome("Carla")
+            .email(new Email("carla@example.com"))
+            .matricula("MAT-3")
+            .criadoEm(LocalDateTime.now())
+            .build();
+
+        when(alunoService.buscarPorEmail("carla@example.com")).thenReturn(aluno);
+
+        mockMvc.perform(get("/api/v1/alunos/email/carla@example.com"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email", is("carla@example.com")));
+    }
+
+    @Test
+    void deveBuscarAlunoPorMatricula() throws Exception {
+        Aluno aluno = Aluno.builder()
+            .id(UUID.randomUUID())
+            .nome("Daniel")
+            .email(new Email("daniel@example.com"))
+            .matricula("MAT-4")
+            .criadoEm(LocalDateTime.now())
+            .build();
+
+        when(alunoService.buscarPorMatricula("MAT-4")).thenReturn(aluno);
+
+        mockMvc.perform(get("/api/v1/alunos/matricula/MAT-4"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.matricula", is("MAT-4")));
+    }
+
+    @Test
+    void deveAtualizarAluno() throws Exception {
+        UUID alunoId = UUID.randomUUID();
+        Aluno alunoAtualizado = Aluno.builder()
+            .id(alunoId)
+            .nome("Eduardo Atualizado")
+            .email(new Email("novo@example.com"))
+            .matricula("MAT-5")
+            .criadoEm(LocalDateTime.now())
+            .build();
+
+        when(alunoService.atualizar(any(UUID.class), any(AlunoUpdateRequest.class))).thenReturn(alunoAtualizado);
+
+        AlunoUpdateRequest dto = new AlunoUpdateRequest("Eduardo Atualizado", "novo@example.com", "MAT-5");
+
+        mockMvc.perform(patch("/api/v1/alunos/{id}", alunoId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.nome", is("Eduardo Atualizado")));
+    }
+
+    @Test
+    void deveExcluirAluno() throws Exception {
+        UUID alunoId = UUID.randomUUID();
+        Aluno aluno = Aluno.builder().id(alunoId).nome("Fernando").matricula("MAT-6").criadoEm(LocalDateTime.now()).build();
+        when(alunoService.buscarPorId(alunoId)).thenReturn(aluno);
+
+        mockMvc.perform(delete("/api/v1/alunos/{id}", alunoId))
+            .andExpect(status().isNoContent());
     }
 }

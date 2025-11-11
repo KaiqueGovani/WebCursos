@@ -4,9 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import com.morangosdoamor.WebCursos.domain.valueobject.CargaHoraria;
+
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -22,6 +25,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Entidade de domínio que representa um curso disponível na plataforma.
+ * 
+ * Princípios DDD aplicados:
+ * - Entidade com identidade única (UUID)
+ * - Value Object CargaHoraria encapsula regras de carga horária
+ * - Coleção de pré-requisitos como elementos do domínio
+ * - Mantém relacionamento com Matricula
+ * 
+ * Responsabilidades:
+ * - Representar informações do curso (código, nome, descrição)
+ * - Gerenciar pré-requisitos do curso
+ * - Encapsular carga horária com validações e conversões
+ */
 @Entity
 @Table(name = "curso")
 @Getter
@@ -45,8 +62,8 @@ public class Curso {
     @Column(name = "descricao", nullable = false, length = 1000)
     private String descricao;
 
-    @Column(name = "carga_horaria", nullable = false)
-    private int cargaHoraria;
+    @Embedded
+    private CargaHoraria cargaHoraria;
 
     @Builder.Default
     @ElementCollection(fetch = FetchType.EAGER)

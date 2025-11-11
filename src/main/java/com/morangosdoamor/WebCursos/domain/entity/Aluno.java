@@ -24,6 +24,20 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Entidade de domínio que representa um aluno na plataforma de cursos.
+ * 
+ * Princípios DDD aplicados:
+ * - Entidade com identidade única (UUID)
+ * - Encapsula regras de negócio relacionadas a alunos
+ * - Mantém relacionamento bidirecional com Matricula
+ * - Value Object Email encapsula validação de email
+ * 
+ * Responsabilidades:
+ * - Gerenciar matrículas do aluno
+ * - Calcular estatísticas (total de cursos aprovados)
+ * - Garantir data de criação consistente
+ */
 @Entity
 @Table(name = "aluno")
 @Getter
@@ -54,15 +68,32 @@ public class Aluno {
     @OneToMany(mappedBy = "aluno", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Matricula> matriculas = new HashSet<>();
 
+    /**
+     * Adiciona uma matrícula ao aluno e estabelece o relacionamento bidirecional.
+     * Garante consistência do relacionamento aluno-matrícula.
+     * 
+     * @param matricula Matrícula a ser adicionada ao aluno
+     */
     public void adicionarMatricula(Matricula matricula) {
         matriculas.add(matricula);
         matricula.setAluno(this);
     }
 
+    /**
+     * Calcula o total de cursos aprovados pelo aluno.
+     * Considera apenas matrículas concluídas com nota final ≥ 7.0.
+     * 
+     * @return Quantidade de cursos aprovados (nota ≥ 7.0)
+     */
     public long totalCursosAprovados() {
         return matriculas.stream().filter(Matricula::estaAprovado).count();
     }
 
+    /**
+     * Registra a data de criação do aluno se ainda não estiver definida.
+     * Garante que toda entidade tenha uma data de criação consistente.
+     * Útil para criação via builders ou mappers que podem não definir a data.
+     */
     public void registrarCriacaoSeNecessario() {
         if (criadoEm == null) {
             criadoEm = LocalDateTime.now();

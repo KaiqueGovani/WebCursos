@@ -53,36 +53,81 @@ Representa um estudante na plataforma com os seguintes atributos:
 
 ### Curso
 Representa um curso disponível na plataforma:
-- `id` (String) - Identificador único do curso
+- `id` (UUID) - Identificador único do curso
+- `codigo` (String) - Código único do curso
 - `nome` (String) - Nome do curso
 - `descricao` (String) - Descrição detalhada do conteúdo
-- `cargaHoraria` (int) - Duração em horas
-- `prerequisitos` (String[]) - Array de IDs dos cursos pré-requisitos
+- `cargaHoraria` (CargaHoraria) - Duração em horas (Value Object com validações e conversões)
+- `prerequisitos` (Set<String>) - Conjunto de códigos dos cursos pré-requisitos
+
+### CargaHoraria (Value Object)
+Value Object que encapsula a carga horária de um curso com validações e conversões:
+- Validação: mínimo de 1 hora, máximo de 1000 horas
+- Conversões disponíveis:
+  - `emDias()` - Converte para dias úteis (8 horas/dia)
+  - `emSemanas()` - Converte para semanas (40 horas/semana)
 
 ## Funcionalidades Implementadas
+
+### API REST - Endpoints Completos
+
+#### AlunoController (`/api/v1/alunos`)
+- `POST /api/v1/alunos` - Criar novo aluno
+- `GET /api/v1/alunos` - Listar todos os alunos
+- `GET /api/v1/alunos/{id}` - Buscar aluno por ID (retorna detalhes com matrículas)
+- `GET /api/v1/alunos/email/{email}` - Buscar aluno por email
+- `GET /api/v1/alunos/matricula/{matricula}` - Buscar aluno por matrícula
+- `PATCH /api/v1/alunos/{id}` - Atualizar aluno (atualização parcial)
+- `DELETE /api/v1/alunos/{id}` - Excluir aluno
+- `GET /api/v1/alunos/{id}/matriculas` - Listar matrículas do aluno
+- `POST /api/v1/alunos/{id}/matriculas` - Matricular aluno em curso
+- `POST /api/v1/alunos/{id}/matriculas/{matriculaId}/conclusao` - Concluir curso
+- `GET /api/v1/alunos/{id}/cursos/liberados` - Listar cursos liberados
+- `GET /api/v1/alunos/{id}/matriculas/{matriculaId}/nota` - Obter nota final
+
+#### CursoController (`/api/v1/cursos`)
+- `POST /api/v1/cursos` - Criar novo curso
+- `GET /api/v1/cursos` - Listar todos os cursos
+- `GET /api/v1/cursos/{id}` - Buscar curso por ID (retorna detalhes com conversões de carga horária)
+- `GET /api/v1/cursos/carga-horaria/minima?horas=X` - Buscar cursos por carga horária mínima
+- `GET /api/v1/cursos/carga-horaria/maxima?horas=X` - Buscar cursos por carga horária máxima
+- `PATCH /api/v1/cursos/{id}` - Atualizar curso (atualização parcial)
+- `DELETE /api/v1/cursos/{id}` - Excluir curso
+
+### AlunoService
+Serviço que gerencia operações relacionadas a alunos:
+- `criar(Aluno)` - Cria novo aluno com validação de matrícula única
+- `buscarPorId(UUID)` - Busca aluno por ID
+- `listarTodos()` - Lista todos os alunos ordenados por nome
+- `buscarPorEmail(String)` - Busca aluno por email
+- `buscarPorMatricula(String)` - Busca aluno por matrícula
+- `atualizar(UUID, AlunoUpdateDTO)` - Atualiza dados do aluno (parcial)
+- `excluir(UUID)` - Remove aluno do sistema
 
 ### CursoService
 Serviço principal que gerencia toda a lógica de negócio relacionada aos cursos:
 
+#### CRUD de Cursos
+- `criar(CursoRequestDTO)` - Cria novo curso com validação de código único
+- `listarTodos()` - Lista todos os cursos ordenados por nome
+- `buscarPorId(UUID)` - Busca curso por ID
+- `buscarPorCodigo(String)` - Busca curso por código
+- `buscarPorCargaHorariaMinima(int)` - Filtra cursos com carga horária mínima
+- `buscarPorCargaHorariaMaxima(int)` - Filtra cursos com carga horária máxima
+- `atualizar(UUID, CursoUpdateDTO)` - Atualiza dados do curso (parcial)
+- `excluir(UUID)` - Remove curso do sistema
+
 #### Gestão de Matrículas
-- `adicionarCurso(Aluno, String cursoId)` - Matricula um aluno em um curso
-- `getCursos(Aluno)` - Retorna os cursos em que o aluno está matriculado
 - Validação automática de pré-requisitos antes da matrícula
 
 #### Finalização de Cursos
-- `finalizarCurso(Aluno, Curso, float nota)` - Finaliza um curso com nota (0-10)
 - Aprovação automática com nota ≥ 7.0
 - Registro de histórico acadêmico
 
 #### Sistema de Liberação Automática
-- `findLiberadosByAluno(Aluno)` - Retorna cursos liberados para matrícula
+- `buscarCursosLiberados(UUID alunoId)` - Retorna cursos liberados para matrícula
 - **Regra de negócio**: Cada curso concluído com média ≥ 7.0 libera automaticamente 3 novos cursos
 - Verificação inteligente de pré-requisitos
-
-#### Consultas e Relatórios
-- `getNota(Aluno, Curso)` - Consulta nota final de um curso
-- `isCursoFinalizado(Aluno, Curso)` - Verifica se curso foi concluído
-- `getAllCursos()` - Lista todos os cursos disponíveis
 
 ### Cursos Pré-configurados
 O sistema inicializa com cursos de exemplo:
@@ -117,9 +162,12 @@ Os cenários BDD são implementados como testes automatizados que guiam o desenv
 ## Status do Desenvolvimento
 
 ✅ **Entidades de Domínio** - Implementadas (`Aluno` e `Curso`)  
-✅ **Serviço de Cursos** - Implementado com funcionalidades completas  
+✅ **Value Objects** - `Email` e `CargaHoraria` implementados com validações  
+✅ **CRUD Completo** - Endpoints REST completos para Aluno e Curso  
+✅ **Serviços de Negócio** - AlunoService e CursoService com todas as operações  
 ✅ **Sistema de Matrícula** - Funcionando com validação de pré-requisitos  
 ✅ **Sistema de Liberação Automática** - Implementado (3 cursos por aprovação)  
-✅ **Testes Unitários** - Cobrindo cenários principais BDD  
+✅ **Testes Unitários e de Integração** - Cobertura completa de todos os endpoints e serviços  
+✅ **Documentação Swagger** - API documentada com OpenAPI 3  
 🚧 **Interface Web** - Próxima fase de desenvolvimento  
 🚧 **Sistema de Notificações** - Planejado para implementação futura

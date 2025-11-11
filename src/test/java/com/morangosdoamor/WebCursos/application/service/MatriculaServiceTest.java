@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.morangosdoamor.WebCursos.domain.entity.Aluno;
 import com.morangosdoamor.WebCursos.domain.entity.Curso;
 import com.morangosdoamor.WebCursos.domain.entity.Matricula;
+import com.morangosdoamor.WebCursos.domain.valueobject.CargaHoraria;
 import com.morangosdoamor.WebCursos.domain.enums.MatriculaStatus;
 import com.morangosdoamor.WebCursos.domain.exception.BusinessRuleException;
 import com.morangosdoamor.WebCursos.domain.exception.ResourceNotFoundException;
@@ -48,7 +49,7 @@ class MatriculaServiceTest {
     @BeforeEach
     void setUp() {
         aluno = Aluno.builder().id(UUID.randomUUID()).nome("Ana").matricula("MAT-1").build();
-        curso = Curso.builder().id(UUID.randomUUID()).codigo("JAVA001").nome("Java").descricao("Cursos").cargaHoraria(40).build();
+        curso = Curso.builder().id(UUID.randomUUID()).codigo("JAVA001").nome("Java").descricao("Cursos").cargaHoraria(new CargaHoraria(40)).build();
     }
 
     @Test
