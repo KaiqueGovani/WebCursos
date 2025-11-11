@@ -119,6 +119,27 @@ class CursoServiceTest {
     }
 
     @Test
+    void deveCriarCursoComPrerequisitosNull() {
+        CursoRequest dto = new CursoRequest("PYTHON001", "Python", "Curso de Python", 60, null);
+        Curso cursoSalvo = Curso.builder()
+            .id(UUID.randomUUID())
+            .codigo("PYTHON001")
+            .nome("Python")
+            .descricao("Curso de Python")
+            .cargaHoraria(new CargaHoraria(60))
+            .prerequisitos(Set.of())
+            .build();
+
+        when(cursoRepository.findByCodigo("PYTHON001")).thenReturn(Optional.empty());
+        when(cursoRepository.save(any(Curso.class))).thenReturn(cursoSalvo);
+
+        Curso criado = cursoService.criar(dto);
+
+        assertThat(criado.getCodigo()).isEqualTo("PYTHON001");
+        verify(cursoRepository).save(any(Curso.class));
+    }
+
+    @Test
     void deveLancarErroAoCriarCursoComCodigoDuplicado() {
         CursoRequest dto = new CursoRequest("JAVA001", "Java", "Desc", 40, Set.of());
         Curso existente = Curso.builder().id(UUID.randomUUID()).codigo("JAVA001").build();
@@ -232,6 +253,50 @@ class CursoServiceTest {
         Curso atualizado = cursoService.atualizar(cursoId, dto);
 
         assertThat(atualizado.getNome()).isEqualTo("Java Atualizado");
+        verify(cursoRepository).save(curso);
+    }
+
+    @Test
+    void deveAtualizarCargaHoraria() {
+        UUID cursoId = UUID.randomUUID();
+        Curso curso = Curso.builder()
+            .id(cursoId)
+            .codigo("JAVA001")
+            .nome("Java")
+            .descricao("Descrição")
+            .cargaHoraria(new CargaHoraria(40))
+            .build();
+
+        when(cursoRepository.findById(cursoId)).thenReturn(Optional.of(curso));
+        when(cursoRepository.save(any(Curso.class))).thenReturn(curso);
+
+        CursoUpdateRequest dto = new CursoUpdateRequest(null, null, null, 60, null);
+        Curso atualizado = cursoService.atualizar(cursoId, dto);
+
+        assertThat(atualizado.getCargaHoraria().getHoras()).isEqualTo(60);
+        verify(cursoRepository).save(curso);
+    }
+
+    @Test
+    void deveAtualizarPrerequisitos() {
+        UUID cursoId = UUID.randomUUID();
+        Curso curso = Curso.builder()
+            .id(cursoId)
+            .codigo("JAVA001")
+            .nome("Java")
+            .descricao("Descrição")
+            .cargaHoraria(new CargaHoraria(40))
+            .prerequisitos(Set.of())
+            .build();
+
+        when(cursoRepository.findById(cursoId)).thenReturn(Optional.of(curso));
+        when(cursoRepository.save(any(Curso.class))).thenReturn(curso);
+
+        Set<String> novosPrerequisitos = Set.of("BASIC001", "INTRO001");
+        CursoUpdateRequest dto = new CursoUpdateRequest(null, null, null, null, novosPrerequisitos);
+        Curso atualizado = cursoService.atualizar(cursoId, dto);
+
+        assertThat(atualizado.getPrerequisitos()).containsExactlyInAnyOrderElementsOf(novosPrerequisitos);
         verify(cursoRepository).save(curso);
     }
 
