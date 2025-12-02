@@ -159,6 +159,40 @@ Os cenários BDD são implementados como testes automatizados que guiam o desenv
 ./mvnw spring-boot:run
 ```
 
+## CI/CD Pipeline (Jenkins)
+
+O projeto utiliza Jenkins para integração e entrega contínua com os seguintes stages:
+
+### Pipeline Principal (Jenkinsfile)
+
+| Stage | Descrição |
+|-------|-----------|
+| **Pre-Build** | Limpa o projeto (`mvnw clean`) |
+| **Pipeline-test-dev** | Executa testes com `mvnw verify`, gera relatórios JUnit, PMD e JaCoCo |
+| **Quality Gate** | Valida cobertura mínima de 99% (parse do jacoco.xml) |
+| **Image_Docker** | Build da imagem Docker (condicional ao quality gate) |
+| **Push Docker Image** | Push para Docker Hub (`kaiquemgovani/kaiquemg:latest`) |
+| **Staging** | Sobe container e executa smoke tests |
+| **Post-Build** | Arquiva artefatos (.jar e relatórios) |
+
+### Staging Environment
+
+O ambiente de staging utiliza `docker-compose.staging.yml`:
+- **Porta**: 8686 (externa) → 8080 (interna)
+- **Container**: `webcursos-staging`
+- **Imagem**: `kaiquemgovani/kaiquemg:latest`
+
+```bash
+# Subir ambiente staging manualmente
+docker-compose -f docker-compose.staging.yml up -d
+
+# Verificar logs
+docker-compose -f docker-compose.staging.yml logs
+
+# Testar endpoint
+curl http://localhost:8686
+```
+
 ## Status do Desenvolvimento
 
 ✅ **Entidades de Domínio** - Implementadas (`Aluno` e `Curso`)  

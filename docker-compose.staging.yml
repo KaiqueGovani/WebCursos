@@ -1,0 +1,9 @@
+version: '3.9'
+
+services:
+  webcursos-staging:
+    image: kaiquemgovani/kaiquemg:latest
+    container_name: webcursos-staging
+    ports:
+      - "8686:8080"
+    restart: unless-stopped
