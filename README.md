@@ -41,6 +41,7 @@ O projeto está sendo desenvolvido em Java com Spring Boot, seguindo a metodolog
 - `src/main/java/com/morangosdoamor/WebCursos/domain/` - Entidades de domínio (Aluno, Curso)
 - `src/main/java/com/morangosdoamor/WebCursos/service/` - Serviços de negócio (CursoService)
 - `src/test/java/` - Testes unitários e de integração
+  - `integration/CursoIntegrationTest.java` - Testes de integração end-to-end com contexto Spring completo
 
 ## Entidades de Domínio
 
