@@ -1,0 +1,35 @@
+version: '3.9'
+
+services:
+  database:
+    image: postgres
+    container_name: webcursos-db
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: webcursos
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  webcursos-staging:
+    image: kaiquemgovani/kaiquemg:latest
+    container_name: webcursos-staging
+    environment:
+      SPRING_PROFILES_ACTIVE: staging
+      DB_HOST: database
+      DB_NAME: webcursos
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8686:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-volume:

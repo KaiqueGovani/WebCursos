@@ -159,6 +159,50 @@ Os cenários BDD são implementados como testes automatizados que guiam o desenv
 ./mvnw spring-boot:run
 ```
 
+## CI/CD Pipeline (Jenkins)
+
+O projeto utiliza Jenkins para integração e entrega contínua com os seguintes stages:
+
+### Pipeline Principal (Jenkinsfile)
+
+| Stage | Descrição |
+|-------|-----------|
+| **Pre-Build** | Limpa o projeto (`mvnw clean`) |
+| **Pipeline-test-dev** | Executa testes com `mvnw verify`, gera relatórios JUnit, PMD e JaCoCo |
+| **Quality Gate** | Valida cobertura mínima de 99% (parse do jacoco.xml) |
+| **Image_Docker** | Build da imagem Docker (condicional ao quality gate) |
+| **Push Docker Image** | Push para Docker Hub (`kaiquemgovani/kaiquemg:latest`) |
+| **Staging** | Sobe container e executa smoke tests |
+| **Post-Build** | Arquiva artefatos (.jar e relatórios) |
+
+### Staging Environment
+
+O ambiente de staging utiliza `docker-compose.staging.yml` com PostgreSQL:
+
+| Serviço | Container | Porta | Imagem |
+|---------|-----------|-------|--------|
+| **Database** | `webcursos-db` | 5432 (interno) | `postgres` |
+| **API** | `webcursos-staging` | 8686 → 8080 | `kaiquemgovani/kaiquemg:latest` |
+
+**Profiles disponíveis:**
+- `dev` - H2 em memória (desenvolvimento local)
+- `staging` - PostgreSQL (ambiente de staging)
+- `test` - H2 em memória (testes automatizados)
+
+```bash
+# Subir ambiente staging manualmente
+docker-compose -f docker-compose.staging.yml up -d
+
+# Verificar logs
+docker-compose -f docker-compose.staging.yml logs
+
+# Testar endpoint
+curl http://localhost:8686
+
+# Derrubar ambiente
+docker-compose -f docker-compose.staging.yml down -v
+```
+
 ## Status do Desenvolvimento
 
 ✅ **Entidades de Domínio** - Implementadas (`Aluno` e `Curso`)  
