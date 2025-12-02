@@ -177,10 +177,17 @@ O projeto utiliza Jenkins para integração e entrega contínua com os seguintes
 
 ### Staging Environment
 
-O ambiente de staging utiliza `docker-compose.staging.yml`:
-- **Porta**: 8686 (externa) → 8080 (interna)
-- **Container**: `webcursos-staging`
-- **Imagem**: `kaiquemgovani/kaiquemg:latest`
+O ambiente de staging utiliza `docker-compose.staging.yml` com PostgreSQL:
+
+| Serviço | Container | Porta | Imagem |
+|---------|-----------|-------|--------|
+| **Database** | `webcursos-db` | 5432 (interno) | `postgres` |
+| **API** | `webcursos-staging` | 8686 → 8080 | `kaiquemgovani/kaiquemg:latest` |
+
+**Profiles disponíveis:**
+- `dev` - H2 em memória (desenvolvimento local)
+- `staging` - PostgreSQL (ambiente de staging)
+- `test` - H2 em memória (testes automatizados)
 
 ```bash
 # Subir ambiente staging manualmente
@@ -191,6 +198,9 @@ docker-compose -f docker-compose.staging.yml logs
 
 # Testar endpoint
 curl http://localhost:8686
+
+# Derrubar ambiente
+docker-compose -f docker-compose.staging.yml down -v
 ```
 
 ## Status do Desenvolvimento
