@@ -99,7 +99,7 @@ pipeline {
                     steps {
                         echo 'Starting container from Docker Hub...'
                         sh 'docker compose -f docker-compose.staging.yml pull'
-                        sh 'docker compose -f docker-compose.staging.yml up -d --no-color'
+                        sh 'docker compose -f docker-compose.staging.yml up -d --no-color --force-recreate'
                         sleep time: 60, unit: 'SECONDS'
                         sh 'docker compose -f docker-compose.staging.yml logs'
                         sh 'docker compose -f docker-compose.staging.yml ps'
