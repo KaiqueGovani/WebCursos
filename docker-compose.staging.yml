@@ -3,7 +3,7 @@ version: '3.9'
 services:
   database:
     image: postgres
-    container_name: webcursos-db
+    container_name: webcursos-db-staging
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: webcursos
