@@ -67,7 +67,7 @@ class CursoConcluidoEventPublisherTest {
     }
 
     @Test
-    void naoDevePropararExcecaoQuandoFalharPublicacao() {
+    void naoDevePropagarExcecaoQuandoFalharPublicacao() {
         CursoConcluidoEvent event = createEvent(8.5, true);
 
         doThrow(new AmqpException("Connection refused"))
