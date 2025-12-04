@@ -3,6 +3,7 @@ package com.morangosdoamor.WebCursos.application.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -21,9 +22,12 @@ import com.morangosdoamor.WebCursos.domain.entity.Aluno;
 import com.morangosdoamor.WebCursos.domain.entity.Curso;
 import com.morangosdoamor.WebCursos.domain.entity.Matricula;
 import com.morangosdoamor.WebCursos.domain.valueobject.CargaHoraria;
+import com.morangosdoamor.WebCursos.domain.valueobject.Email;
 import com.morangosdoamor.WebCursos.domain.enums.MatriculaStatus;
 import com.morangosdoamor.WebCursos.domain.exception.BusinessRuleException;
 import com.morangosdoamor.WebCursos.domain.exception.ResourceNotFoundException;
+import com.morangosdoamor.WebCursos.infrastructure.messaging.event.CursoConcluidoEvent;
+import com.morangosdoamor.WebCursos.infrastructure.messaging.publisher.CursoConcluidoEventPublisher;
 import com.morangosdoamor.WebCursos.infrastructure.repository.AlunoRepository;
 import com.morangosdoamor.WebCursos.infrastructure.repository.CursoRepository;
 import com.morangosdoamor.WebCursos.infrastructure.repository.MatriculaRepository;
@@ -40,6 +44,9 @@ class MatriculaServiceTest {
     @Mock
     private MatriculaRepository matriculaRepository;
 
+    @Mock
+    private CursoConcluidoEventPublisher eventPublisher;
+
     @InjectMocks
     private MatriculaService matriculaService;
 
@@ -48,8 +55,19 @@ class MatriculaServiceTest {
 
     @BeforeEach
     void setUp() {
-        aluno = Aluno.builder().id(UUID.randomUUID()).nome("Ana").matricula("MAT-1").build();
-        curso = Curso.builder().id(UUID.randomUUID()).codigo("JAVA001").nome("Java").descricao("Cursos").cargaHoraria(new CargaHoraria(40)).build();
+        aluno = Aluno.builder()
+            .id(UUID.randomUUID())
+            .nome("Ana")
+            .email(new Email("ana@test.com"))
+            .matricula("MAT-1")
+            .build();
+        curso = Curso.builder()
+            .id(UUID.randomUUID())
+            .codigo("JAVA001")
+            .nome("Java")
+            .descricao("Cursos")
+            .cargaHoraria(new CargaHoraria(40))
+            .build();
     }
 
     @Test
@@ -114,6 +132,54 @@ class MatriculaServiceTest {
         assertThat(concluida.getStatus()).isEqualTo(MatriculaStatus.CONCLUIDO);
         assertThat(concluida.getNotaFinal()).isEqualTo(nota);
         assertThat(concluida.getDataConclusao()).isNotNull();
+    }
+
+    @Test
+    void devePublicarEventoQuandoCursoForConcluido() {
+        double nota = 8.5;
+        Matricula matricula = Matricula.builder()
+            .id(UUID.randomUUID())
+            .aluno(aluno)
+            .curso(curso)
+            .status(MatriculaStatus.MATRICULADO)
+            .build();
+
+        when(matriculaRepository.findByIdAndAlunoId(matricula.getId(), aluno.getId())).thenReturn(Optional.of(matricula));
+
+        matriculaService.concluir(aluno.getId(), matricula.getId(), nota);
+
+        ArgumentCaptor<CursoConcluidoEvent> eventCaptor = ArgumentCaptor.forClass(CursoConcluidoEvent.class);
+        verify(eventPublisher).publish(eventCaptor.capture());
+
+        CursoConcluidoEvent event = eventCaptor.getValue();
+        assertThat(event.alunoId()).isEqualTo(aluno.getId());
+        assertThat(event.alunoNome()).isEqualTo(aluno.getNome());
+        assertThat(event.cursoId()).isEqualTo(curso.getId());
+        assertThat(event.cursoCodigo()).isEqualTo(curso.getCodigo());
+        assertThat(event.notaFinal()).isEqualTo(nota);
+        assertThat(event.aprovado()).isTrue();
+    }
+
+    @Test
+    void devePublicarEventoComAprovadoFalseQuandoNotaBaixa() {
+        double nota = 5.0;
+        Matricula matricula = Matricula.builder()
+            .id(UUID.randomUUID())
+            .aluno(aluno)
+            .curso(curso)
+            .status(MatriculaStatus.MATRICULADO)
+            .build();
+
+        when(matriculaRepository.findByIdAndAlunoId(matricula.getId(), aluno.getId())).thenReturn(Optional.of(matricula));
+
+        matriculaService.concluir(aluno.getId(), matricula.getId(), nota);
+
+        ArgumentCaptor<CursoConcluidoEvent> eventCaptor = ArgumentCaptor.forClass(CursoConcluidoEvent.class);
+        verify(eventPublisher).publish(eventCaptor.capture());
+
+        CursoConcluidoEvent event = eventCaptor.getValue();
+        assertThat(event.notaFinal()).isEqualTo(nota);
+        assertThat(event.aprovado()).isFalse();
     }
 
     @Test
