@@ -1,6 +1,23 @@
 version: '3.9'
 
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: webcursos-rabbitmq-staging
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+    volumes:
+      - rabbitmq-volume:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   database:
     image: postgres
     container_name: webcursos-db-staging
@@ -24,12 +41,16 @@ services:
       DB_NAME: webcursos
       DB_USER: postgres
       DB_PASSWORD: postgres
+      RABBITMQ_HOST: rabbitmq
     ports:
       - "8686:8080"
     depends_on:
       database:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
   db-volume:
+  rabbitmq-volume:

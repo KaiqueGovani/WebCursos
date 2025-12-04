@@ -12,6 +12,8 @@ import com.morangosdoamor.WebCursos.domain.entity.Matricula;
 import com.morangosdoamor.WebCursos.domain.enums.MatriculaStatus;
 import com.morangosdoamor.WebCursos.domain.exception.BusinessRuleException;
 import com.morangosdoamor.WebCursos.domain.exception.ResourceNotFoundException;
+import com.morangosdoamor.WebCursos.infrastructure.messaging.event.CursoConcluidoEvent;
+import com.morangosdoamor.WebCursos.infrastructure.messaging.publisher.CursoConcluidoEventPublisher;
 import com.morangosdoamor.WebCursos.infrastructure.repository.AlunoRepository;
 import com.morangosdoamor.WebCursos.infrastructure.repository.CursoRepository;
 import com.morangosdoamor.WebCursos.infrastructure.repository.MatriculaRepository;
@@ -25,10 +27,12 @@ import lombok.RequiredArgsConstructor;
  * - Clean Architecture: encapsula regras de negócio relacionadas a matrículas
  * - DDD: opera sobre entidades de domínio preservando invariantes
  * - Transaction Management: métodos transacionais garantem consistência de dados
+ * - Event-Driven: publica eventos de conclusão de curso para processamento assíncrono
  * 
  * Responsabilidades:
  * - Matrícula de alunos em cursos
  * - Conclusão de cursos com registro de nota final
+ * - Publicação de eventos de conclusão de curso
  * - Validação de regras de negócio (nota entre 0 e 10, evitar matrícula duplicada)
  * - Consulta de matrículas e notas finais
  */
@@ -39,6 +43,7 @@ public class MatriculaService {
     private final AlunoRepository alunoRepository;
     private final CursoRepository cursoRepository;
     private final MatriculaRepository matriculaRepository;
+    private final CursoConcluidoEventPublisher eventPublisher;
 
     /**
      * Matricula um aluno em um curso.
@@ -79,6 +84,7 @@ public class MatriculaService {
      * Valida se a nota está no intervalo válido (0 a 10).
      * Valida se a matrícula ainda não foi concluída.
      * Registra automaticamente a data de conclusão e atualiza o status para CONCLUIDO.
+     * Publica um evento de conclusão de curso para processamento assíncrono.
      * 
      * @param alunoId UUID do aluno proprietário da matrícula
      * @param matriculaId UUID da matrícula a ser concluída
@@ -101,7 +107,36 @@ public class MatriculaService {
         }
 
         matricula.concluir(notaFinal);
+
+        // Publica evento de conclusão de curso para processamento assíncrono
+        publishCursoConcluidoEvent(matricula);
+
         return matricula;
+    }
+
+    /**
+     * Publica um evento de conclusão de curso no RabbitMQ.
+     * O evento é publicado independentemente se o aluno foi aprovado ou não,
+     * permitindo que os consumidores decidam como processar cada caso.
+     * 
+     * @param matricula Matrícula concluída com todos os dados necessários
+     */
+    private void publishCursoConcluidoEvent(Matricula matricula) {
+        Aluno aluno = matricula.getAluno();
+        Curso curso = matricula.getCurso();
+
+        CursoConcluidoEvent event = CursoConcluidoEvent.of(
+            aluno.getId(),
+            aluno.getNome(),
+            aluno.getEmail() != null ? aluno.getEmail().getValue() : null,
+            curso.getId(),
+            curso.getNome(),
+            curso.getCodigo(),
+            matricula.getNotaFinal(),
+            matricula.getDataConclusao()
+        );
+
+        eventPublisher.publish(event);
     }
 
     /**
@@ -146,3 +181,4 @@ public class MatriculaService {
         }
     }
 }
+

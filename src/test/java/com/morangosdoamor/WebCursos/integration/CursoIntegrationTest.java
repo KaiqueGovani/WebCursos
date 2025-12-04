@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -24,6 +25,7 @@ import com.morangosdoamor.WebCursos.api.dto.CursoRequest;
 import com.morangosdoamor.WebCursos.api.dto.CursoResponse;
 import com.morangosdoamor.WebCursos.api.dto.MatriculaRequest;
 import com.morangosdoamor.WebCursos.api.dto.MatriculaResponse;
+import com.morangosdoamor.WebCursos.config.TestRabbitMQConfig;
 import com.morangosdoamor.WebCursos.infrastructure.repository.AlunoRepository;
 import com.morangosdoamor.WebCursos.infrastructure.repository.CursoRepository;
 import com.morangosdoamor.WebCursos.infrastructure.repository.MatriculaRepository;
@@ -36,6 +38,7 @@ import java.util.List;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@Import(TestRabbitMQConfig.class)
 @DisplayName("Testes de Integração - Fluxo Completo de Cursos")
 class CursoIntegrationTest {
 
