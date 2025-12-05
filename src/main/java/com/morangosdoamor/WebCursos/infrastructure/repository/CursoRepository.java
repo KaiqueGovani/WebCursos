@@ -19,4 +19,21 @@ public interface CursoRepository extends JpaRepository<Curso, UUID> {
 
     @Query("SELECT c FROM Curso c WHERE c.cargaHoraria.cargaHoraria <= :horas")
     List<Curso> findByCargaHorariaMaxima(@Param("horas") int horas);
+
+    /**
+     * Busca cursos que o aluno ainda não está matriculado (nem iniciou, nem concluiu).
+     * Usado pelo serviço de recomendação de IA para sugerir novos cursos.
+     * 
+     * @param alunoId ID do aluno
+     * @return Lista de cursos disponíveis para matrícula, ordenados por nome
+     */
+    @Query("""
+        SELECT c FROM Curso c 
+        WHERE c.id NOT IN (
+            SELECT m.curso.id FROM Matricula m 
+            WHERE m.aluno.id = :alunoId
+        )
+        ORDER BY c.nome
+    """)
+    List<Curso> findCursosNotEnrolledByAluno(@Param("alunoId") UUID alunoId);
 }

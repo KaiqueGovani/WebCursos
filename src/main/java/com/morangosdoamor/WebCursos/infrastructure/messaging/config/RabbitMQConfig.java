@@ -46,6 +46,9 @@ public class RabbitMQConfig {
     @Value("${webcursos.rabbitmq.routing-key}")
     private String routingKey;
 
+    @Value("${webcursos.rabbitmq.routing-key.email:curso.concluido.email}")
+    private String emailRoutingKey;
+
     // ==================== Exchange ====================
 
     /**
@@ -103,8 +106,8 @@ public class RabbitMQConfig {
     // ==================== Bindings ====================
 
     /**
-     * Vincula a fila de AI Recommendation ao exchange com routing key pattern.
-     * O pattern "curso.concluido.#" captura todas as mensagens de conclusão de curso.
+     * Vincula a fila de AI Recommendation ao exchange com routing key exata.
+     * Usa routing key "curso.concluido" para receber apenas eventos de conclusão de curso.
      * 
      * @param aiRecommendationQueue Fila de AI Recommendation
      * @param webcursosExchange Exchange principal
@@ -114,12 +117,13 @@ public class RabbitMQConfig {
     public Binding aiRecommendationBinding(Queue aiRecommendationQueue, TopicExchange webcursosExchange) {
         return BindingBuilder.bind(aiRecommendationQueue)
                 .to(webcursosExchange)
-                .with(routingKey + ".#");
+                .with(routingKey);
     }
 
     /**
-     * Vincula a fila de Email Notification ao exchange com routing key pattern.
-     * O pattern "curso.concluido.#" captura todas as mensagens de conclusão de curso.
+     * Vincula a fila de Email Notification ao exchange com routing key específica.
+     * Usa routing key "curso.concluido.email" para receber apenas eventos de email
+     * publicados após o processamento de IA.
      * 
      * @param emailNotificationQueue Fila de Email Notification
      * @param webcursosExchange Exchange principal
@@ -129,7 +133,7 @@ public class RabbitMQConfig {
     public Binding emailNotificationBinding(Queue emailNotificationQueue, TopicExchange webcursosExchange) {
         return BindingBuilder.bind(emailNotificationQueue)
                 .to(webcursosExchange)
-                .with(routingKey + ".#");
+                .with(emailRoutingKey);
     }
 
     // ==================== Message Converter ====================

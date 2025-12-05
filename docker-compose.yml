@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -18,6 +16,16 @@ services:
       timeout: 10s
       retries: 5
 
+  # MailHog Email Sandbox (Workstream 2)
+  mailhog:
+    image: mailhog/mailhog
+    container_name: webcursos-mailhog
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI for email preview
+    logging:
+      driver: none
+
   webcursos-app:
     build:
       context: .
@@ -28,9 +36,14 @@ services:
       - "8080:8080"
     environment:
       RABBITMQ_HOST: rabbitmq
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     depends_on:
       rabbitmq:
         condition: service_healthy
+      mailhog:
+        condition: service_started
 
 volumes:
   rabbitmq-data:
