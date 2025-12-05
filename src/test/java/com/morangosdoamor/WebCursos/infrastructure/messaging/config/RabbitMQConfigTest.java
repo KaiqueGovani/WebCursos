@@ -26,6 +26,7 @@ class RabbitMQConfigTest {
     private static final String EMAIL_QUEUE_NAME = "curso.concluido.email-notification";
     private static final String DLQ_NAME = "curso.concluido.dlq";
     private static final String ROUTING_KEY = "curso.concluido";
+    private static final String EMAIL_ROUTING_KEY = "curso.concluido.email";
 
     @BeforeEach
     void setUp() {
@@ -35,6 +36,7 @@ class RabbitMQConfigTest {
         ReflectionTestUtils.setField(config, "emailNotificationQueueName", EMAIL_QUEUE_NAME);
         ReflectionTestUtils.setField(config, "dlqName", DLQ_NAME);
         ReflectionTestUtils.setField(config, "routingKey", ROUTING_KEY);
+        ReflectionTestUtils.setField(config, "emailRoutingKey", EMAIL_ROUTING_KEY);
     }
 
     @Test
@@ -88,7 +90,8 @@ class RabbitMQConfigTest {
         assertThat(binding).isNotNull();
         assertThat(binding.getExchange()).isEqualTo(EXCHANGE_NAME);
         assertThat(binding.getDestination()).isEqualTo(AI_QUEUE_NAME);
-        assertThat(binding.getRoutingKey()).isEqualTo(ROUTING_KEY + ".#");
+        // AI queue uses exact routing key to receive only CursoConcluidoEvent
+        assertThat(binding.getRoutingKey()).isEqualTo(ROUTING_KEY);
     }
 
     @Test
@@ -101,7 +104,8 @@ class RabbitMQConfigTest {
         assertThat(binding).isNotNull();
         assertThat(binding.getExchange()).isEqualTo(EXCHANGE_NAME);
         assertThat(binding.getDestination()).isEqualTo(EMAIL_QUEUE_NAME);
-        assertThat(binding.getRoutingKey()).isEqualTo(ROUTING_KEY + ".#");
+        // Email queue uses specific routing key to receive only EmailNotificationEvent
+        assertThat(binding.getRoutingKey()).isEqualTo(EMAIL_ROUTING_KEY);
     }
 
     @Test
