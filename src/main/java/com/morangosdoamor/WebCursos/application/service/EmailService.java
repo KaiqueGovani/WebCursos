@@ -60,18 +60,6 @@ public class EmailService {
         }
     }
 
-    /**
-     * Envia email de conclusão de curso com recomendação.
-     * Método de conveniência que formata o assunto automaticamente.
-     * 
-     * @param to Endereço de email do destinatário
-     * @param cursoNome Nome do curso concluído
-     * @param mensagemRecomendacao Mensagem personalizada gerada pela IA
-     */
-    public void sendCourseCompletionEmail(String to, String cursoNome, String mensagemRecomendacao) {
-        String subject = String.format("Parabéns pela conclusão do curso %s!", cursoNome);
-        sendEmail(to, subject, mensagemRecomendacao);
-    }
 }
 
 
