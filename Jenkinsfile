@@ -64,7 +64,6 @@ pipeline {
                     }
                 }
 
-
                 stage('Image_Docker') {
                     steps {
                         script {

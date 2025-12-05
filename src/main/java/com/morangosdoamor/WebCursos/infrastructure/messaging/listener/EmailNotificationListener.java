@@ -1,66 +1,62 @@
 package com.morangosdoamor.WebCursos.infrastructure.messaging.listener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-import com.morangosdoamor.WebCursos.infrastructure.messaging.event.CursoConcluidoEvent;
+import com.morangosdoamor.WebCursos.application.service.EmailService;
+import com.morangosdoamor.WebCursos.infrastructure.messaging.event.EmailNotificationEvent;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Listener para envio de notificações por email.
  * 
  * Este componente consome mensagens da fila curso.concluido.email-notification
- * e processa eventos de conclusão de curso para enviar emails de notificação.
+ * que são publicadas pelo AiRecommendationListener após processar a recomendação.
  * 
- * NOTA: Esta é uma implementação skeleton para ser completada no Workstream 2.
- * O envio real de emails deve ser implementado posteriormente.
+ * Fluxo:
+ * 1. Recebe EmailNotificationEvent (publicado pelo AI Listener)
+ * 2. Envia email via EmailService
  * 
- * Responsabilidades futuras (Workstream 2):
- * - Enviar email de parabéns para alunos aprovados
- * - Enviar email de incentivo para alunos reprovados
- * - Notificar sobre novos cursos liberados
- * - Enviar certificado de conclusão (se aprovado)
+ * Este design garante:
+ * - Emails são enviados apenas após processamento de IA
+ * - Retry independente para falhas de email
+ * - Sem duplicação de emails
  */
 @Component
+@RequiredArgsConstructor
+@Slf4j
 public class EmailNotificationListener {
 
-    private static final Logger log = LoggerFactory.getLogger(EmailNotificationListener.class);
+    private final EmailService emailService;
 
     /**
-     * Processa eventos de conclusão de curso para envio de notificações por email.
+     * Processa eventos de notificação para envio de email.
      * 
-     * @param event Evento de conclusão de curso contendo dados do aluno e curso
+     * @param event Evento de notificação contendo dados do email a ser enviado
      */
     @RabbitListener(queues = "${webcursos.rabbitmq.queue.email-notification}")
-    public void processEmailNotification(CursoConcluidoEvent event) {
+    public void processEmailNotification(EmailNotificationEvent event) {
         log.info("=== Email Notification Listener ===");
-        log.info("Recebido evento de conclusão de curso para notificação por email");
-        log.info("Destinatário: {} <{}>", event.alunoNome(), event.alunoEmail());
-        log.info("Curso: {} - {}", event.cursoCodigo(), event.cursoNome());
-        log.info("Nota Final: {} | Aprovado: {}", event.notaFinal(), event.aprovado());
-        log.info("Data Conclusão: {}", event.dataConclusao());
-        
-        // TODO: Implementar lógica de envio de email (Workstream 2)
-        // 1. Selecionar template de email apropriado
-        // 2. Preencher template com dados do evento
-        // 3. Enviar email via serviço de email (SMTP, SendGrid, etc.)
-        // 4. Registrar envio no histórico de notificações
-        
-        if (event.aprovado()) {
-            log.info("Preparando email de PARABÉNS para o aluno...");
-            // TODO: Enviar email de parabéns com:
-            // - Certificado de conclusão
-            // - Lista de cursos liberados (3 novos cursos)
-            // - Recomendações de próximos passos
-        } else {
-            log.info("Preparando email de INCENTIVO para o aluno...");
-            // TODO: Enviar email de incentivo com:
-            // - Mensagem motivacional
-            // - Sugestões de revisão
-            // - Opção de refazer o curso
+        log.info("Recebido evento de notificação para envio de email");
+        log.info("Destinatário: {} <{}>", event.nomeDestinatario(), event.destinatario());
+        log.info("Assunto: {}", event.assunto());
+        log.info("AlunoId: {} | CursoId: {}", event.alunoId(), event.cursoId());
+
+        try {
+            emailService.sendEmail(
+                    event.destinatario(),
+                    event.assunto(),
+                    event.corpo()
+            );
+
+            log.info("Email enviado com sucesso para: {}", event.destinatario());
+        } catch (Exception e) {
+            log.error("Erro ao enviar email para: {}", event.destinatario(), e);
+            throw e; // Re-throw para que a mensagem vá para DLQ se necessário
         }
-        
+
         log.info("=== Fim do processamento Email Notification ===");
     }
 }
